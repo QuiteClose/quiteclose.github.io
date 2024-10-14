@@ -43,4 +43,3 @@ serve:
 
 shell:
 	$(call with_container,/bin/sh)
-
