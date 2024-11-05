@@ -3,5 +3,5 @@ layout: default
 title: "Home"
 ---
 
-## Start here!
+{% include palette.html %}
 

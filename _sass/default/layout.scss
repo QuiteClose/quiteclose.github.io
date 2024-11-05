@@ -1,0 +1,15 @@
+body {
+    font-size: 24px;
+}
+
+body div#dark-mode-toggle {
+    position: fixed;
+    top: 1em;
+    right: 1em;
+}
+
+body main#content{
+    max-width: 80ex;
+    margin: 0 auto;
+    padding: 1em;
+}
