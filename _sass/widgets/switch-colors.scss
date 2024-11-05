@@ -1,0 +1,4 @@
+body.#{$scheme} .slider { background-color: $base0; }
+body.#{$scheme} .slider:before { background-color: $base2; }
+body.#{$scheme} input:checked + .slider { background-color: $cyan; }
+body.#{$scheme} input:focus + .slider { box-shadow: 0 0 1px $base00; }

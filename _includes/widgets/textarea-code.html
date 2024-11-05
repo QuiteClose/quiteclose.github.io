@@ -1,0 +1,57 @@
+<div id="{{ include.id }}-wrapper" class="code-editor">
+<!-- The code editor will be rendered here via resetCodeEditor_{{ include.id }} -->
+</div>
+<script>
+function renderTemplate_{{ include.id }}(content) {
+  /* Returns a string of HTML describing a textarea for a code-editor */
+  return `<textarea is="highlighted-code"
+          id="{{ include.id }}"
+          cols="{{ include.cols | default: 80 }}"
+          rows="{{ include.rows | default: 12 }}"
+          language="{{ include.language | default: 'auto' }}"
+          class="code-editor text-base0 background-base3"
+          auto-height>
+${content}
+</textarea>
+`;
+}
+
+function resetCodeEditor_{{ include.id }}(content) {
+  const wrapper = document.getElementById('{{ include.id }}-wrapper');
+  wrapper.replaceChildren();
+  wrapper.innerHTML = renderTemplate_{{ include.id }}(content);
+}
+
+// Render initial state
+resetCodeEditor_{{ include.id }}(`{{ include.content }}`);
+</script>
+<script type="module">
+// Source: https://www.npmjs.com/package/highlighted-code
+(async ({chrome, netscape}) => {
+  // Import HighlightedCode to customize textareas
+  const {default: HighlightedCode} = await import('https://unpkg.com/highlighted-code');
+  // Apply the colour scheme
+  var colorSchemeApplied = localStorage.getItem('colorSchemeApplied');
+  const schemeMap = {
+    "borland-light": "default",
+    "borland-dark": "far",
+    "crt-dark": "base16/green-screen",
+    "crt-light": "base16/green-screen",
+    "dune-dark": "base16/atelier-dune",
+    "dune-light": "base16/atelier-dune-light",
+    "solarized-light": "base16/solarized-light",
+    "solarized-dark":  "base16/solarized-dark",
+    "rose-pine-dark":  "base16/ros-pine-moon",
+    "rose-pine-light":  "base16/ros-pine-dawn",
+  };
+  HighlightedCode.useTheme(schemeMap[colorSchemeApplied]||"base16"+colorSchemeApplied);
+  // Setup the Callback for colour scheme changes
+  var Callback = function() {
+    var targetColorScheme = localStorage.getItem('colorSchemeApplied');
+    HighlightedCode.useTheme(schemeMap[targetColorScheme]);
+    const textareaContent = document.getElementById('{{ include.id }}').value;
+    resetCodeEditor_{{ include.id }}(textareaContent);
+  }
+  ColorSchemeChangeCallbacks.HighlightedCode{{ include.id }} = Callback;
+})(self);
+</script>

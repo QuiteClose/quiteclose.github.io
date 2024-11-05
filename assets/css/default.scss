@@ -1,0 +1,10 @@
+---
+---
+@import "layouts/default";
+{% for scheme in site.data.color-schemes.default %}
+/* ColorScheme: {{ scheme }} */
+@import "color-schemes/{{ scheme }}-dark";
+@import "layouts/default/_scheme";
+@import "color-schemes/{{ scheme }}-light";
+@import "layouts/default/_scheme";
+{% endfor %}

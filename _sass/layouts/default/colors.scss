@@ -1,0 +1,100 @@
+///////////////////////////////////////////////////////////////////////////////
+// $scheme General Colors
+///////////////////////////////////////////////////////////////////////////////
+.#{$scheme} .background-base03 { background-color: $base03; }
+.#{$scheme} .background-base02 { background-color: $base02; }
+.#{$scheme} .background-base01 { background-color: $base01; }
+.#{$scheme} .background-base00 { background-color: $base00; }
+.#{$scheme} .background-base0 { background-color: $base0; }
+.#{$scheme} .background-base1 { background-color: $base1; }
+.#{$scheme} .background-base2 { background-color: $base2; }
+.#{$scheme} .background-base3 { background-color: $base3; }
+.#{$scheme} .background-yellow { background-color: $yellow; }
+.#{$scheme} .background-orange { background-color: $orange; }
+.#{$scheme} .background-red { background-color: $red; }
+.#{$scheme} .background-magenta { background-color: $magenta; }
+.#{$scheme} .background-violet { background-color: $violet; }
+.#{$scheme} .background-blue { background-color: $blue; }
+.#{$scheme} .background-cyan { background-color: $cyan; }
+.#{$scheme} .background-green { background-color: $green; }
+.#{$scheme} .text-base03 { color: $base03; }
+.#{$scheme} .text-base02 { color: $base02; }
+.#{$scheme} .text-base01 { color: $base01; }
+.#{$scheme} .text-base00 { color: $base00; }
+.#{$scheme} .text-base0 { color: $base0; }
+.#{$scheme} .text-base1 { color: $base1; }
+.#{$scheme} .text-base2 { color: $base2; }
+.#{$scheme} .text-base3 { color: $base3; }
+.#{$scheme} .text-yellow { color: $yellow; }
+.#{$scheme} .text-orange { color: $orange; }
+.#{$scheme} .text-red { color: $red; }
+.#{$scheme} .text-magenta { color: $magenta; }
+.#{$scheme} .text-violet { color: $violet; }
+.#{$scheme} .text-blue { color: $blue; }
+.#{$scheme} .text-cyan { color: $cyan; }
+.#{$scheme} .text-green { color: $green; }
+///////////////////////////////////////////////////////////////////////////////
+// $scheme Specific Colors
+///////////////////////////////////////////////////////////////////////////////
+.#{$scheme}-background-base03 { background-color: $base03; }
+.#{$scheme}-background-base02 { background-color: $base02; }
+.#{$scheme}-background-base01 { background-color: $base01; }
+.#{$scheme}-background-base00 { background-color: $base00; }
+.#{$scheme}-background-base0 { background-color: $base0; }
+.#{$scheme}-background-base1 { background-color: $base1; }
+.#{$scheme}-background-base2 { background-color: $base2; }
+.#{$scheme}-background-base3 { background-color: $base3; }
+.#{$scheme}-background-yellow { background-color: $yellow; }
+.#{$scheme}-background-orange { background-color: $orange; }
+.#{$scheme}-background-red { background-color: $red; }
+.#{$scheme}-background-magenta { background-color: $magenta; }
+.#{$scheme}-background-violet { background-color: $violet; }
+.#{$scheme}-background-blue { background-color: $blue; }
+.#{$scheme}-background-cyan { background-color: $cyan; }
+.#{$scheme}-background-green { background-color: $green; }
+.#{$scheme}-text-base03 { color: $base03; }
+.#{$scheme}-text-base02 { color: $base02; }
+.#{$scheme}-text-base01 { color: $base01; }
+.#{$scheme}-text-base00 { color: $base00; }
+.#{$scheme}-text-base0 { color: $base0; }
+.#{$scheme}-text-base1 { color: $base1; }
+.#{$scheme}-text-base2 { color: $base2; }
+.#{$scheme}-text-base3 { color: $base3; }
+.#{$scheme}-text-yellow { color: $yellow; }
+.#{$scheme}-text-orange { color: $orange; }
+.#{$scheme}-text-red { color: $red; }
+.#{$scheme}-text-magenta { color: $magenta; }
+.#{$scheme}-text-violet { color: $violet; }
+.#{$scheme}-text-blue { color: $blue; }
+.#{$scheme}-text-cyan { color: $cyan; }
+.#{$scheme}-text-green { color: $green; }
+///////////////////////////////////////////////////////////////////////////////
+// $scheme Layout Colors
+///////////////////////////////////////////////////////////////////////////////
+.#{$scheme} { background-color: $base2; color: $base0; }
+
+.#{$scheme} a { color: $blue; }
+.#{$scheme} a:visited { color: $violet; }
+
+.#{$scheme} #color-scheme-panel { background-color: $base3; }
+.#{$scheme} .color-scheme-panel-content .slider{ border-color: $base1}
+.#{$scheme} .color-scheme-button { background-color: $base2; }
+.#{$scheme} .color-scheme-button>div { }
+
+.#{$scheme} :is(header, h1, h2, h3, h4, h5, h6) { color: $base0; }
+.#{$scheme} #site-heading p { color: $base01; }
+
+.#{$scheme}>header a { color: $base0; }
+.#{$scheme}>header a:visited { color: $base0; }
+.#{$scheme}>header a:hover { color: $blue; }
+
+$current-page-nav-color: $orange;
+.#{$scheme}.page-home a.page-home { color: $current-page-nav-color; }
+.#{$scheme}.page-home a.page-home:visited { color: $current-page-nav-color; }
+.#{$scheme}.page-about a.page-about { color: $current-page-nav-color; }
+.#{$scheme}.page-about a.page-about:visited { color: $current-page-nav-color; }
+
+.#{$scheme}>main {background-color: $base3; }
+
+.#{$scheme} article.post>header h1 { color: $current-page-nav-color; }
+.#{$scheme} article.post .embed-right { border-color: $base03; }

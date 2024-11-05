@@ -1,0 +1,86 @@
+<style type="text/css">
+.palette {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: center;
+  align-items: center;
+  align-content: space-around;
+}
+
+.palette > div {
+  position: relative;
+  width: 20%;
+  margin: 1%;
+}
+.palette > div > div:first-child {
+  margin-top: 100%;
+
+}
+.palette > div > div:last-child {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  border-radius: 1ex;
+  padding: 1.5ex;
+  font-weight: bold;
+}
+</style>
+<div id="palette-{{ include.id }}" class="palette"></div>
+<script>
+/* Convert RGB values to HEX
+ * Source: https://stackoverflow.com/a/3627747/4540711
+ */
+const rgba2hex = (rgba) => `#${rgba.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d+\.{0,1}\d*))?\)$/).slice(1).map((n, i) => (i === 3 ? Math.round(parseFloat(n) * 255) : parseFloat(n)).toString(16).padStart(2, '0').replace('NaN', '')).join('')}`
+
+function insertPalette(paletteId) {
+  const colors = [
+    "base03",
+    "base02",
+    "base01",
+    "base00",
+    "base0",
+    "base1",
+    "base2",
+    "base3",
+    "yellow",
+    "orange",
+    "red",
+    "magenta",
+    "violet",
+    "blue",
+    "cyan",
+    "green"
+  ];
+  const foreground = {
+    "base03": "base3",
+    "base02": "base3",
+    "base01": "base3",
+    "base00": "base3",
+    "base0": "base03",
+    "base1": "base03",
+    "base2": "base03",
+    "base3": "base03",
+    "yellow": "base3",
+    "orange": "base3",
+    "red": "base3",
+    "magenta": "base3",
+    "violet": "base3",
+    "blue": "base3",
+    "cyan": "base3",
+    "green": "base3"
+  };
+  const palette = document.getElementById(paletteId);
+  for (let color of colors) {
+    const wrapper = document.createElement("div");
+    const filler = document.createElement("div");
+    const content = document.createElement("div");
+    content.classList.add("background-" + color);
+    content.classList.add("text-" + foreground[color]);
+    content.innerHTML = color
+    wrapper.appendChild(filler);
+    wrapper.appendChild(content);
+    palette.appendChild(wrapper);
+  }
+}
+
+insertPalette("palette-{{ include.id }}");
+</script>

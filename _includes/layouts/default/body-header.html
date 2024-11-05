@@ -1,0 +1,21 @@
+<header>
+<div id="site-heading">
+  <h1 id="site-title">@QuiteClose</h1>
+  <p>A Computer Programmer's Website.</p>
+  <script>
+function loadURLhostname() {
+  var url = window.location.href;
+  var hostname = new URL(url).hostname;
+  var siteTitle = document.getElementById("site-title");
+  siteTitle.innerHTML = '@'+hostname;
+}
+loadURLhostname();
+  </script>
+</div>
+  <nav>
+    <ul>
+      <li><a class="page-home" href="{{ "/" | relative_url }}">Home</a></li>
+      <li><a class="page-about" href="{{ "/about" | relative_url }}">About</a></li>
+    </ul>
+  </nav>
+</header>

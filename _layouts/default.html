@@ -3,10 +3,24 @@
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="utf-8">
+    <link rel="stylesheet" href="{{ "/assets/css/default.css" | relative_url }}">
+    <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+    {% include layouts/default/head-fonts.html %}
+    {% if page.title %}
     <title>{{ page.title }} - {{ site.title }}</title>
-    <link rel="stylesheet" href="{{ "/assets/css/main.css" | relative_url }}">
+    {% else %}
+    <title>{{ site.title }}</title>
+    {% endif %}
   </head>
+{% if page.class %}
+  <body class="{{ page.class }}">
+{% else %}
   <body>
+{% endif %}
+    {% include layouts/default/body-color-controls.html %}
+    {% include layouts/default/body-header.html %}
+    <main>
     {{ content }}
+    </main>
   </body>
 </html>

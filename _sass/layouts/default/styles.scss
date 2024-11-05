@@ -1,0 +1,185 @@
+.noselect {
+  -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome and Opera */
+}
+
+body {
+  font-size: 24px;
+  font-family: "Merriweather", serif;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+div#color-scheme-panel {
+  position: fixed;
+  top: 0; right: 0;
+  width: 8ex; height: 3ex;
+  overflow: hidden;
+  text-align: right;
+  border-bottom-left-radius: 0.3ex;
+  padding: 0.5ex;
+  border-left: 1px solid;
+  border-bottom: 1px solid;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+div#color-scheme-panel.extended {
+  width: 100%;
+  height: 12ex;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.color-scheme-panel-control {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5ex;
+  justify-content: flex-end;
+  align-items: center;
+  align-content: flex-end;
+  font-size: 1.3em;
+}
+
+.color-scheme-panel-selector {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5ex;
+  justify-content: center;
+  align-items: center;
+  align-content: middle;
+}
+
+.color-scheme-panel-selector label {
+  text-align: center;
+  padding: 0.5ex;
+  font-size: 75%;
+}
+
+.color-scheme-panel-selector label>div{
+  background-color: Transparent !important;
+}
+
+.color-scheme-panel-selector .color-scheme-button {
+  font-size: 140%;
+}
+
+.color-scheme-button{
+  width: 6ex;
+  height: 6ex;
+  padding: 0;
+  margin: 0;
+}
+
+.color-scheme-button>div {
+  display: flex;
+  flex-direction: row-reverse;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+  align-content: space-evenly;
+  width: 100%;
+  height: 100%;
+}
+
+.color-scheme-button .button9 div {
+  width: 26%; height: 26%;
+  border-radius: 1ex;
+}
+
+.color-scheme-button .button16 div {
+  width: 26%; height: 26%;
+  border-radius: 1ex;
+}
+
+body div#color-scheme-toggle {
+    position: fixed;
+    top: 1em;
+    right: 1em;
+}
+
+body>header {
+  max-width: 45em;
+  margin: 0 auto;
+  padding: 1ex;
+  border-radius: 1ex;
+  line-height: 1.5;
+}
+
+body>header a {text-decoration: none;}
+body>header a:hover {text-decoration: underline;}
+
+body>header div#site-heading {
+  display: inline-block;
+  font-size: 1.5em;
+  line-height: 1;
+}
+body>header div#site-heading h1 {
+    font-size: 1.5em;
+    margin: 0 1ex;
+    padding: 0;
+    font-style: italic;
+}
+body>header div#site-heading p {
+    text-align: right;
+    font-weight: bold;
+    font-size: 0.5em;
+    font-style: italic;
+    margin: 0;
+    padding: 0;
+    padding-right: 2em;
+}
+body>header nav {
+    margin: 0;
+    padding: 0;
+    display: block;
+    text-align: left;
+    border-top: 1px solid;
+}
+
+body>header nav ul {
+    list-style-type: none;
+    display: Inline-Block;
+    margin: 0;
+    padding: 0 1ex;
+}
+
+body>header nav ul li {
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+}
+
+body>header nav ul li:before {
+  content: "\00a0/\00a0";
+}
+
+body>header nav ul li:after{
+  content: "\00a0\00a0";
+}
+
+body>main {
+    clear: both;
+    max-width: 45em;
+    margin: 0 auto;
+    padding: 1ex;
+    border-radius: 1ex;
+    line-height: 1.5;
+}
+
+article.post > footer {
+    font-size: 0.75em;
+    text-align: center;
+}
+
+article.post .embed-right {
+  width: 40%;
+  float: right;
+  margin: 0 0 1em 1em;
+  border: 0.5ex solid;
+  border-radius: 0.5ex;
+}

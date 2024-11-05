@@ -1,0 +1,197 @@
+<div id="color-scheme-panel">
+  <div class="color-scheme-panel-control noselect">
+    <label class="switch">
+      <input id="dark-mode-checkbox" type="checkbox" onchange="toggleDarkMode()">
+      <span class="slider round"></span>
+      <span class="content-checked">🌞</span>
+      <span class="content-unchecked">🌛</span>
+    </label>
+    <button class="color-scheme-button" onclick="toggleColorSchemeSelector()">
+      <div class="button9">
+        <div class="background-red"></div>
+        <div class="background-orange"></div>
+        <div class="background-yellow"></div>
+        <div class="background-magenta"></div>
+        <div class="background-base03"></div>
+        <div class="background-green"></div>
+        <div class="background-violet"></div>
+        <div class="background-blue"></div>
+        <div class="background-cyan"></div>
+      </div>
+    </button>
+  </div>
+  <div class="color-scheme-panel-selector">
+{% for scheme in site.data.color-schemes.default %}
+    <label>
+      <button class="color-scheme-button" onclick="selectColorScheme('{{scheme}}', 'light');">
+        <div class="button16 {{scheme}}-light-background-base3">
+          <div class="{{scheme}}-light-background-red"></div>
+          <div class="{{scheme}}-light-background-orange"></div>
+          <div class="{{scheme}}-light-background-yellow"></div>
+          <div class="{{scheme}}-light-background-magenta"></div>
+          <div class="{{scheme}}-light-background-base03"></div>
+          <div class="{{scheme}}-light-background-green"></div>
+          <div class="{{scheme}}-light-background-violet"></div>
+          <div class="{{scheme}}-light-background-blue"></div>
+          <div class="{{scheme}}-light-background-cyan"></div>
+        </div>
+      </button><br>
+      {{ scheme }}
+    </label>
+{% endfor %}
+{% for scheme in site.data.color-schemes.default %}
+    <label>
+      <button class="color-scheme-button" onclick="selectColorScheme('{{scheme}}', 'dark');">
+        <div class="button16 {{scheme}}-dark-background-base3">
+          <div class="{{scheme}}-dark-background-red"></div>
+          <div class="{{scheme}}-dark-background-orange"></div>
+          <div class="{{scheme}}-dark-background-yellow"></div>
+          <div class="{{scheme}}-dark-background-magenta"></div>
+          <div class="{{scheme}}-dark-background-base03"></div>
+          <div class="{{scheme}}-dark-background-green"></div>
+          <div class="{{scheme}}-dark-background-violet"></div>
+          <div class="{{scheme}}-dark-background-blue"></div>
+          <div class="{{scheme}}-dark-background-cyan"></div>
+        </div>
+      </button><br>
+      {{ scheme }}
+    </label>
+{% endfor %}
+  </div>
+  <script>
+/* Callbacks for color scheme changes */
+const ColorSchemeChangeCallbacks = {};
+
+/* Only the best for the new visitors! */
+DEFAULT_COLOR_SCHEME = "solarized";
+DEFAULT_COLOR_MODE = "auto";
+
+/* Callbacks should not occur until this is true */
+COLOR_SCHEME_LOADED = false;
+
+function getColorScheme() {
+  /* get color scheme from local storage.
+   * returns e.g. "solarized"
+   */
+  var colorSchemeSet = localStorage.getItem("colorSchemeSet");
+  if (colorSchemeSet != "true") {
+    setColorScheme(DEFAULT_COLOR_SCHEME);
+  }
+  var colorScheme = localStorage.getItem("colorScheme");
+  return colorScheme;
+}
+
+function setColorScheme(colorScheme) {
+  /* saves the given color scheme to local storage */
+  localStorage.setItem("colorScheme", colorScheme);
+  localStorage.setItem("colorSchemeSet", "true");
+}
+
+function getColorMode() {
+  /* get color mode from local storage.
+   * returns one of "light", "dark"
+   */
+  var colorModeSet = localStorage.getItem("colorModeSet");
+  if (colorModeSet != "true") {
+    setColorMode("auto");
+  }
+  var colorMode = localStorage.getItem("colorMode");
+  if (colorMode == "auto") {
+    colorMode = detectDarkModePreference();
+  }
+  return colorMode;
+}
+
+function setColorMode(colorMode) {
+  /* saves the given color mode to local storage */
+  localStorage.setItem("colorMode", colorMode);
+  switch (colorMode) {
+    case "auto":
+    case "light":
+    case "dark":
+      localStorage.setItem("colorModeSet", "true");
+      break;
+    default:
+      localStorage.setItem("colorModeSet", "false");
+  }
+}
+
+function detectDarkModePreference() {
+  /* detect browser dark-mode preference,
+   * returns "light" or "dark"
+   */
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return "dark";
+  } else {
+    return "light";
+  }
+}
+
+function setDarkModeCheckbox(checked) {
+  /* updates the state of the dark-mode checkbox */
+  var checkbox = document.getElementById("dark-mode-checkbox");
+  checkbox.checked = checked;
+}
+
+function applyColorScheme(scheme, mode) {
+  /* applies the given color scheme and mode to the body element */
+  var previousScheme = localStorage.getItem("colorSchemeApplied");
+  var targetScheme = scheme+"-"+mode;
+  document.body.classList.remove(previousScheme);
+  document.body.classList.add(targetScheme);
+  localStorage.setItem("colorSchemeApplied", targetScheme);
+}
+
+function updateColorScheme() {
+  /* updates the color scheme based on local storage */
+  var colorScheme = getColorScheme();
+  var colorMode = getColorMode();
+  applyColorScheme(colorScheme, colorMode);
+  for (var key in ColorSchemeChangeCallbacks) {
+    setTimeout(ColorSchemeChangeCallbacks[key], 70);
+  }
+}
+
+function selectColorScheme(scheme, mode) {
+  /* Called when the drown-down is changed */
+  if (COLOR_SCHEME_LOADED == true) {
+    COLOR_SCHEME_LOADED = false;
+    setColorScheme(scheme);
+    setColorMode(mode);
+    setDarkModeCheckbox(mode == "dark");
+    updateColorScheme();
+    COLOR_SCHEME_LOADED = true;
+  }
+}
+
+function toggleColorSchemeSelector() {
+  var panel = document.getElementById("color-scheme-panel");
+  var selector = document.querySelector("#color-scheme-panel .color-scheme-panel-selector");
+  panel.classList.toggle("extended");
+
+}
+
+function toggleDarkMode() {
+  /* Called when the dark-mode toggle is changed */
+  if (COLOR_SCHEME_LOADED == true) {
+    if (getColorMode() == "light") {
+      setColorMode("dark");
+    } else {
+      setColorMode("light");
+    }
+    updateColorScheme();
+  }
+}
+
+function loadColorScheme() {
+  /* loads color preferences and adds appropriate class to body element */
+  updateColorScheme();
+  setDarkModeCheckbox(getColorMode() == "dark");
+  COLOR_SCHEME_LOADED = true;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+loadColorScheme();
+  </script>
+</div>
