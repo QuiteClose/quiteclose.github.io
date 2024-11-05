@@ -1,3 +1,4 @@
+///////////////////////////////////////////////////////////////////////////////
 body {
     font-size: 24px;
 }
@@ -8,8 +9,48 @@ body div#dark-mode-toggle {
     right: 1em;
 }
 
+body header {
+  font-size: 1.5em;
+  padding: 1ex;
+}
+
+body header h1 {
+    display: Inline-Block;
+    font-size: 1em;
+    margin: 0;
+    padding: 0;
+}
+body header nav {
+    display: Inline-Block;
+    margin: 0;
+    padding: 0;
+}
+
+body header nav ul {
+    list-style-type: none;
+    display: Inline-Block;
+    margin: 0;
+    padding: 0;
+}
+
+body header nav ul li {
+    display: inline-block;
+    text-indent: 3;
+    margin: 0;
+    padding: 0;
+}
+
+body header nav ul li:before {
+  content: "\00a0\00a0\00a0/\00a0";
+}
+
 body main#content{
     max-width: 80ex;
     margin: 0 auto;
-    padding: 1em;
+    padding: 1ex;
+}
+
+body footer {
+    font-size: 0.75em;
+    text-align: center;
 }

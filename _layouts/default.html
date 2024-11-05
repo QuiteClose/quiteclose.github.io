@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <title>{{ page.title }} - {{ site.title }}</title>
     <link rel="stylesheet" href="{{ "/assets/css/default.css" | relative_url }}">
-    <script src="https://kit.fontawesome.com/5730b8b1b9.js" crossorigin="anonymous"></script>
+    {% include head_default_fonts.html %}
   </head>
   <body>
     <div id="dark-mode-toggle">
@@ -36,7 +36,7 @@ loadDarkMode();
       </script>
     </div>
     <header>
-      <h1>{{ site.title }}</h1>
+      <h1>@QuiteClose</h1>
       <nav>
         <ul>
           <li><a href="{{ "/" | relative_url }}">Home</a></li>
