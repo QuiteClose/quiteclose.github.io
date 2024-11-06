@@ -1,6 +1,7 @@
 ---
 layout: default
 title: "About"
+class: page-about
 ---
 
 <blockquote class="typewriter">

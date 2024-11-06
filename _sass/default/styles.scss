@@ -2,17 +2,11 @@
 body { background-color: $base2; color: $base0; font-family: "Merriweather", serif; }
 body.dark-mode { background-color: $base02; }
 
+a { color: $blue; }
+a:visited { color: $violet; }
 
 body header, h1, h2, h3, h4, h5, h6 { color: $base0; }
 body.dark-mode header, h1, h2, h3, h4, h5, h6 { color: $base00; }
-body h1, h2, h3, h4, h5, h6, header, {
-  font-family: "Edu AU VIC WA NT Guides", cursive;
-  font-weight: 450;
-  font-style: Normal;
-}
-
-a { color: $blue; }
-a:visited { color: $violet; }
 
 body header a { color: $base0; text-decoration: none; }
 body header a:visited { color: $base0; }
@@ -21,3 +15,9 @@ body.dark-mode header a { color: $base00; }
 body.dark-mode header a:visited { color: $base00; }
 body.dark-mode header a:hover { color: $blue; }
 
+
+$current-page-nav-color: $orange;
+body.page-home a.page-home { color: $current-page-nav-color; }
+body.page-home a.page-home:visited { color: $current-page-nav-color; }
+body.page-about a.page-about { color: $current-page-nav-color; }
+body.page-about a.page-about:visited { color: $current-page-nav-color; }

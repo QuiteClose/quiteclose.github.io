@@ -1,0 +1,10 @@
+<h1 id="site-heading">@QuiteClose</h1>
+<script>
+function loadURLhostname() {
+    var url = window.location.href;
+    var hostname = new URL(url).hostname;
+    var siteHeading = document.getElementById("site-heading");
+    siteHeading.innerHTML = '@'+hostname;
+}
+loadURLhostname();
+</script>

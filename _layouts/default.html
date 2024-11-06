@@ -1,46 +1,20 @@
 <!DOCTYPE html>
 <html lang="{{ site.lang | default: "en-US" }}">
   <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta charset="utf-8">
-    <title>{{ page.title }} - {{ site.title }}</title>
-    <link rel="stylesheet" href="{{ "/assets/css/default.css" | relative_url }}">
-    {% include head_default_fonts.html %}
+    {% include head_default.html %}
   </head>
+{% if page.class %}
+  <body class="{{ page.class }}">
+{% else %}
   <body>
-    <div id="dark-mode-toggle">
-      <label class="switch">
-        <input id="dark-mode-checkbox" type="checkbox" onchange="toggleDarkMode()">
-        <span class="slider round"></span>
-      </label>
-      <script>
-function loadDarkMode() {
-    var body = document.body;
-    var checkbox = document.getElementById("dark-mode-checkbox");
-    var darkMode = localStorage.getItem("darkMode");
-    if (darkMode == "true") {
-        checkbox.checked = true;
-        body.classList.add("dark-mode");
-    }
-}
-function toggleDarkMode() {
-    var element = document.body;
-    element.classList.toggle("dark-mode");
-    if (element.classList.contains("dark-mode")) {
-        localStorage.setItem("darkMode", "true");
-    } else {
-        localStorage.setItem("darkMode", "false");
-    }
-}
-loadDarkMode();
-      </script>
-    </div>
+{% endif %}
+    {% include widget_dark-mode-toggle.html %}
     <header>
-      <h1>@QuiteClose</h1>
+      {% include widget_site-heading.html %}
       <nav>
         <ul>
-          <li><a href="{{ "/" | relative_url }}">Home</a></li>
-          <li><a href="{{ "/about" | relative_url }}">About</a></li>
+          <li><a class="page-home" href="{{ "/" | relative_url }}">Home</a></li>
+          <li><a class="page-about" href="{{ "/about" | relative_url }}">About</a></li>
         </ul>
       </nav>
     </header>
@@ -48,7 +22,7 @@ loadDarkMode();
     {{ content }}
     </main>
     <footer>
-        <p>&copy; {{ site.time | date: "%Y" }} <a href="https://github.com/QuiteClose">@QuiteClose</a></p>
+        <p>&copy; {{ site.time | date: "%Y" }} <a href="https://github.com/QuiteClose/quiteclose.github.io">@QuiteClose</a></p>
     </footer>
   </body>
 </html>
