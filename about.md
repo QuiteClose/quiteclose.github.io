@@ -25,6 +25,8 @@ the biggest impact on me:
     Great for coders who want to become software-engineers.
 *   [The Art of Unix Programming](http://www.catb.org/esr/writings/taoup/html/)<br>
     Learn about the environment.
+*   [Don't Make Me Think](https://eng317hannah.wordpress.ncsu.edu/files/2020/01/Krug_Steve_Dont_make_me_think_revisited___a_cz-lib.org_.pdf)<br>
+    Fundamentals of UI useability.
 *   [Why's (Poignant) Guide to Ruby](https://poignant.guide/book/)<br>
     An invitation to program for fun.
 *   [The C Programming Language](https://archive.org/details/the-ansi-c-programming-language-by-brian-w.-kernighan-dennis-m.-ritchie.org/page/8/mode/2up)<br>
