@@ -1,6 +1,0 @@
-default:
-  - borland
-  - crt
-  - dune
-  - rose-pine
-  - solarized

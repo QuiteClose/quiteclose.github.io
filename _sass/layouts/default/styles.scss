@@ -1,3 +1,7 @@
+// z-index layers
+$zNormal: 0;
+$zTop: 1;
+
 .noselect {
   -webkit-touch-callout: none; /* iOS Safari */
     -webkit-user-select: none; /* Safari */
@@ -8,9 +12,19 @@
                                   supported by Chrome and Opera */
 }
 
+
 body {
   font-size: 24px;
   font-family: "Merriweather", serif;
+  z-index: $zNormal;
+
+  /* First transition to color scheme should be immediate */
+  -webkit-transition: 0;
+  transition: 0;
+}
+
+body.colors-loaded {
+  /* Later transitions to color schemes can be smooth */
   -webkit-transition: .4s;
   transition: .4s;
 }
@@ -19,50 +33,73 @@ div#color-scheme-panel {
   position: fixed;
   top: 0; right: 0;
   width: 8ex; height: 3ex;
+  z-index: $zTop;
   overflow: hidden;
   text-align: right;
   border-bottom-left-radius: 0.3ex;
-  padding: 0.5ex;
+  padding: 1ex;
   border-left: 1px solid;
   border-bottom: 1px solid;
   -webkit-transition: .4s;
   transition: .4s;
 }
 
-div#color-scheme-panel.extended {
+#color-scheme-panel label {
+}
+
+.color-scheme-selector-open  {
+  margin-top: 18ex;
+}
+
+.color-scheme-selector-open div#color-scheme-panel {
   width: 100%;
-  height: 12ex;
+  height: 16ex;
   -webkit-transition: .4s;
   transition: .4s;
 }
 
 .color-scheme-panel-control {
-  display: flex;
-  flex-direction: row;
-  gap: 0.5ex;
-  justify-content: flex-end;
-  align-items: center;
-  align-content: flex-end;
+  display: block;
   font-size: 1.3em;
 }
 
+.color-scheme-panel-control label {
+  position: fixed;
+  top: 1ex;
+  right: 4ex;
+}
+.color-scheme-panel-control button {
+  position: fixed;
+  top: 2ex;
+  right: 2ex;
+}
+
 .color-scheme-panel-selector {
+  position: absolute;
+  height: 13ex;
+  top: 5ex;
+  right: 0; left: 0;
   display: flex;
-  flex-direction: row;
-  gap: 0.5ex;
-  justify-content: center;
-  align-items: center;
-  align-content: middle;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  white-space: nowrap;
+}
+
+.color-scheme-panel-selector>div {
+  display: inline-block;
+  padding: 0.5ex;
+  margin: 0.5ex;
+  border-radius: 0.5ex;
 }
 
 .color-scheme-panel-selector label {
-  text-align: center;
+  display: inline-block;
   padding: 0.5ex;
   font-size: 75%;
-}
-
-.color-scheme-panel-selector label>div{
-  background-color: Transparent !important;
+  width: 10ex;
+  text-align: center;
+  min-height: 10ex;
+  white-space: wrap;
 }
 
 .color-scheme-panel-selector .color-scheme-button {
@@ -70,6 +107,7 @@ div#color-scheme-panel.extended {
 }
 
 .color-scheme-button{
+  display: inline-block;
   width: 6ex;
   height: 6ex;
   padding: 0;
@@ -86,12 +124,10 @@ div#color-scheme-panel.extended {
   height: 100%;
 }
 
-.color-scheme-button .button9 div {
-  width: 26%; height: 26%;
-  border-radius: 1ex;
+.color-scheme-button div.button9 {
 }
 
-.color-scheme-button .button16 div {
+.color-scheme-button .button9 div {
   width: 26%; height: 26%;
   border-radius: 1ex;
 }
@@ -118,6 +154,7 @@ body>header div#site-heading {
   font-size: 1.5em;
   line-height: 1;
 }
+
 body>header div#site-heading h1 {
     font-size: 1.5em;
     margin: 0 1ex;
@@ -133,6 +170,7 @@ body>header div#site-heading p {
     padding: 0;
     padding-right: 2em;
 }
+
 body>header nav {
     margin: 0;
     padding: 0;

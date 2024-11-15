@@ -21,53 +21,38 @@
     </button>
   </div>
   <div class="color-scheme-panel-selector">
-{% for scheme in site.data.color-schemes.default %}
+{% for theme in site.data.color-controls.layouts.default.selectable %}
+{%   assign scheme = theme|split: '-' | first %}
+{%   assign mode = theme|split: '-' | last %}
+{%   assign label = site.data.color-controls.schemes[scheme][mode]["label"] %}
     <label>
-      <button class="color-scheme-button" onclick="selectColorScheme('{{scheme}}', 'light');">
-        <div class="button16 {{scheme}}-light-background-base3">
-          <div class="{{scheme}}-light-background-red"></div>
-          <div class="{{scheme}}-light-background-orange"></div>
-          <div class="{{scheme}}-light-background-yellow"></div>
-          <div class="{{scheme}}-light-background-magenta"></div>
-          <div class="{{scheme}}-light-background-base03"></div>
-          <div class="{{scheme}}-light-background-green"></div>
-          <div class="{{scheme}}-light-background-violet"></div>
-          <div class="{{scheme}}-light-background-blue"></div>
-          <div class="{{scheme}}-light-background-cyan"></div>
+      <button class="color-scheme-button" onclick="selectColorScheme('{{scheme}}', '{{mode}}');">
+        <div class="button9 {{scheme}}-{{mode}}-background-base3">
+          <div class="{{scheme}}-{{mode}}-background-red"></div>
+          <div class="{{scheme}}-{{mode}}-background-orange"></div>
+          <div class="{{scheme}}-{{mode}}-background-yellow"></div>
+          <div class="{{scheme}}-{{mode}}-background-magenta"></div>
+          <div class="{{scheme}}-{{mode}}-background-base03"></div>
+          <div class="{{scheme}}-{{mode}}-background-green"></div>
+          <div class="{{scheme}}-{{mode}}-background-violet"></div>
+          <div class="{{scheme}}-{{mode}}-background-blue"></div>
+          <div class="{{scheme}}-{{mode}}-background-cyan"></div>
         </div>
       </button><br>
-      {{ scheme }}
-    </label>
-{% endfor %}
-{% for scheme in site.data.color-schemes.default %}
-    <label>
-      <button class="color-scheme-button" onclick="selectColorScheme('{{scheme}}', 'dark');">
-        <div class="button16 {{scheme}}-dark-background-base3">
-          <div class="{{scheme}}-dark-background-red"></div>
-          <div class="{{scheme}}-dark-background-orange"></div>
-          <div class="{{scheme}}-dark-background-yellow"></div>
-          <div class="{{scheme}}-dark-background-magenta"></div>
-          <div class="{{scheme}}-dark-background-base03"></div>
-          <div class="{{scheme}}-dark-background-green"></div>
-          <div class="{{scheme}}-dark-background-violet"></div>
-          <div class="{{scheme}}-dark-background-blue"></div>
-          <div class="{{scheme}}-dark-background-cyan"></div>
-        </div>
-      </button><br>
-      {{ scheme }}
+      {{ label }}
     </label>
 {% endfor %}
   </div>
-  <script>
-/* Callbacks for color scheme changes */
-const ColorSchemeChangeCallbacks = {};
+<script language="javascript">
+/* callbacks for color scheme changes */
+const colorControlCallbacks = {};
 
-/* Only the best for the new visitors! */
-DEFAULT_COLOR_SCHEME = "solarized";
-DEFAULT_COLOR_MODE = "auto";
+/* defaults */
+const colorControlDefaultScheme = "solarized";
+const colorControlDefaultMode = "auto";
 
-/* Callbacks should not occur until this is true */
-COLOR_SCHEME_LOADED = false;
+/* avoid race conditions */
+let colorControlReady = false;
 
 function getColorScheme() {
   /* get color scheme from local storage.
@@ -75,7 +60,7 @@ function getColorScheme() {
    */
   var colorSchemeSet = localStorage.getItem("colorSchemeSet");
   if (colorSchemeSet != "true") {
-    setColorScheme(DEFAULT_COLOR_SCHEME);
+    setColorScheme(colorControlDefaultScheme);
   }
   var colorScheme = localStorage.getItem("colorScheme");
   return colorScheme;
@@ -93,7 +78,7 @@ function getColorMode() {
    */
   var colorModeSet = localStorage.getItem("colorModeSet");
   if (colorModeSet != "true") {
-    setColorMode("auto");
+    setColorMode(colorControlDefaultMode);
   }
   var colorMode = localStorage.getItem("colorMode");
   if (colorMode == "auto") {
@@ -135,63 +120,67 @@ function setDarkModeCheckbox(checked) {
 
 function applyColorScheme(scheme, mode) {
   /* applies the given color scheme and mode to the body element */
-  var previousScheme = localStorage.getItem("colorSchemeApplied");
-  var targetScheme = scheme+"-"+mode;
+  const previousScheme = localStorage.getItem("colorSchemeApplied");
+  const targetScheme = scheme+"-"+mode;
   document.body.classList.remove(previousScheme);
   document.body.classList.add(targetScheme);
   localStorage.setItem("colorSchemeApplied", targetScheme);
 }
 
-function updateColorScheme() {
-  /* updates the color scheme based on local storage */
-  var colorScheme = getColorScheme();
-  var colorMode = getColorMode();
-  applyColorScheme(colorScheme, colorMode);
-  for (var key in ColorSchemeChangeCallbacks) {
-    setTimeout(ColorSchemeChangeCallbacks[key], 70);
-  }
-}
-
 function selectColorScheme(scheme, mode) {
   /* Called when the drown-down is changed */
-  if (COLOR_SCHEME_LOADED == true) {
-    COLOR_SCHEME_LOADED = false;
+  if (colorControlReady == true) {
+    colorControlReady = false;
     setColorScheme(scheme);
     setColorMode(mode);
+    applyColorScheme(scheme, mode);
     setDarkModeCheckbox(mode == "dark");
-    updateColorScheme();
-    COLOR_SCHEME_LOADED = true;
+    triggerColorControlCallbacks();
+    colorControlReady = true;
   }
 }
 
 function toggleColorSchemeSelector() {
-  var panel = document.getElementById("color-scheme-panel");
-  var selector = document.querySelector("#color-scheme-panel .color-scheme-panel-selector");
-  panel.classList.toggle("extended");
-
+  /* Expands or collapses the color scheme selector */
+  document.body.classList.toggle("color-scheme-selector-open");
 }
 
 function toggleDarkMode() {
   /* Called when the dark-mode toggle is changed */
-  if (COLOR_SCHEME_LOADED == true) {
+  if (colorControlReady == true) {
     if (getColorMode() == "light") {
-      setColorMode("dark");
+      selectColorScheme(getColorScheme(), "dark");
     } else {
-      setColorMode("light");
+      selectColorScheme(getColorScheme(), "light");
     }
-    updateColorScheme();
   }
 }
 
-function loadColorScheme() {
-  /* loads color preferences and adds appropriate class to body element */
-  updateColorScheme();
-  setDarkModeCheckbox(getColorMode() == "dark");
-  COLOR_SCHEME_LOADED = true;
+function registerColorControlCallback(key, callback) {
+  /* registers a callback that is called when the color scheme changes */
+  colorControlCallbacks[key] = callback;
 }
 
-///////////////////////////////////////////////////////////////////////////////
+function triggerColorControlCallbacks() {
+  /* triggers all registered color control callbacks */
+  for (var key in colorControlCallbacks) {
+    setTimeout(colorControlCallbacks[key], 100);
+  }
+}
 
-loadColorScheme();
-  </script>
+function initColorScheme() {
+  /* Loads color scheme from local storage and applies it */
+  var scheme = getColorScheme();
+  var mode = getColorMode();
+  applyColorScheme(scheme, mode);
+  setDarkModeCheckbox(mode == "dark");
+  colorControlReady = true;
+  setTimeout(() => {
+    // subsequent color scheme changes may be animated
+    document.body.classList.add("colors-loaded");
+  }, 100);
+}
+
+initColorScheme();
+</script>
 </div>

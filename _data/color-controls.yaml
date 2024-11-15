@@ -1,0 +1,379 @@
+layouts:
+  default:
+    enabled:
+      - borland
+      - crt
+      - dune
+      - rosepine
+      - solarized
+    selectable:
+      - crt-light
+      - crt-dark
+      - borland-dark
+      - borland-light
+      - dune-light
+      - rosepine-light
+      - solarized-light
+      - solarized-dark
+      - rosepine-dark
+      - dune-dark
+schemes:
+  borland:
+    light:
+      label: Borland
+      syntax: default
+      palette:
+        base03:  '#000080'
+        base02:  '#0000a8'
+        base01:  '#006078'
+        base00:  '#575757'
+        base0:   '#888888'
+        base1:   '#a8a8a8'
+        base2:   '#f3f3f3'
+        base3:   '#ffffff'
+        yellow:  '#ffff57'
+        orange:  '#ffa857'
+        red:     '#aa2222'
+        magenta: '#ff57ff'
+        violet:  '#a800a8'
+        blue:    '#5757ff'
+        cyan:    '#00a8a8'
+        green:   '#57ff57'
+      text:
+        primary:   base00
+        secondary: base0
+        emphasis:  base01
+        heading:   orange
+        link:      blue
+        visited:   violet
+        hover:     cyan
+      background:
+        primary:   base3
+        secondary: base2
+        embed:     base01
+    dark:
+      label: Turbo
+      syntax: far
+      palette:
+        base03:  '#ffffff'
+        base02:  '#f3f3f3'
+        base01:  '#a8a8a8'
+        base00:  '#888888'
+        base0:   '#575757'
+        base1:   '#006078'
+        base2:   '#0000a8'
+        base3:   '#000080'
+        yellow:  '#ffff57'
+        orange:  '#ffa857'
+        red:     '#aa2222'
+        magenta: '#ff57ff'
+        violet:  '#a800a8'
+        blue:    '#5757ff'
+        cyan:    '#00a8a8'
+        green:   '#57ff57'
+      text:
+        primary:   base00
+        secondary: base0
+        emphasis:  base01
+        heading:   yellow
+        link:      blue
+        visited:   violet
+        hover:     cyan
+      background:
+        primary:   base3
+        secondary: base2
+        embed:     base1
+  crt:
+    light:
+      label: Amber
+      syntax: "base16/amber-screen"
+      palette:
+        base03:  '#ffbf00'
+        base02:  '#e6aa00'
+        base01:  '#cc9600'
+        base00:  '#b38200'
+        base0:   '#996e00'
+        base1:   '#805a00'
+        base2:   '#002200'
+        base3:   '#001100'
+        yellow:  '#996e00'
+        orange:  '#b38200'
+        red:     '#996e00'
+        magenta: '#805a00'
+        violet:  '#cc9600'
+        blue:    '#b38200'
+        cyan:    '#805a00'
+        green:   '#cc9600'
+      text:
+        primary:   base00
+        secondary: base0
+        emphasis:  base01
+        heading:   green
+        link:      blue
+        visited:   violet
+        hover:     cyan
+      background:
+        primary:   base3
+        secondary: base2
+        embed:     base1
+    dark:
+      label: Green
+      syntax: base16/green-screen
+      palette:
+        base03:  '#00ff00'
+        base02:  '#00dd00'
+        base01:  '#00bb00'
+        base00:  '#009900'
+        base0:   '#007700'
+        base1:   '#005500'
+        base2:   '#002200'
+        base3:   '#001100'
+        yellow:  '#007700'
+        orange:  '#009900'
+        red:     '#007700'
+        magenta: '#005500'
+        violet:  '#00bb00'
+        blue:    '#009900'
+        cyan:    '#005500'
+        green:   '#00bb00'
+      text:
+        primary:   base00
+        secondary: base0
+        emphasis:  base01
+        heading:   yellow
+        link:      blue
+        visited:   violet
+        hover:     cyan
+      background:
+        primary:   base3
+        secondary: base2
+        embed:     base1
+  dune:
+    light:
+      label: Dune Light
+      syntax: base16/atelier-dune-light
+      palette:
+        base03:  '#20201d'
+        base02:  '#292824'
+        base01:  '#6e6b5e'
+        base00:  '#7d7a68'
+        base0:   '#999580'
+        base1:   '#a6a28c'
+        base2:   '#e8e4cf'
+        base3:   '#fefbec'
+        yellow:  '#ae9513'
+        orange:  '#b65611'
+        red:     '#d73737'
+        magenta: '#d43552'
+        violet:  '#b854d4'
+        blue:    '#6684e1'
+        cyan:    '#1fad83'
+        green:   '#60ac39'
+      text:
+        primary:   base00
+        secondary: base1
+        emphasis:  base01
+        heading:   orange
+        link:      blue
+        visited:   violet
+        hover:     cyan
+      background:
+        primary:   base3
+        secondary: base2
+        embed:     base02
+    dark:
+      label: Dune
+      syntax: base16/atelier-dune
+      palette:
+        base3:   '#20201d'
+        base2:   '#292824'
+        base1:   '#6e6b5e'
+        base0:   '#7d7a68'
+        base00:  '#999580'
+        base01:  '#a6a28c'
+        base02:  '#e8e4cf'
+        base03:  '#fefbec'
+        yellow:  '#ae9513'
+        orange:  '#b65611'
+        red:     '#d73737'
+        magenta: '#d43552'
+        violet:  '#b854d4'
+        blue:    '#6684e1'
+        cyan:    '#1fad83'
+        green:   '#60ac39'
+      text:
+        primary:   base00
+        secondary: base1
+        emphasis:  base01
+        heading:   orange
+        link:      blue
+        visited:   violet
+        hover:     cyan
+      background:
+        primary:   base3
+        secondary: base2
+        embed:     base02
+  solarized:
+    light:
+      label: Solarized Light
+      syntax: base16/solarized-light
+      palette:
+        base03:  '#002b36'
+        base02:  '#073642'
+        base01:  '#586e75'
+        base00:  '#657b83'
+        base0:   '#839496'
+        base1:   '#93a1a1'
+        base2:   '#eee8d5'
+        base3:   '#fdf6e3'
+        yellow:  '#b58900'
+        orange:  '#cb4b16'
+        red:     '#dc322f'
+        magenta: '#d33682'
+        violet:  '#6c71c4'
+        blue:    '#268bd2'
+        cyan:    '#2aa198'
+        green:   '#859900'
+      text:
+        primary:   base00
+        secondary: base1
+        emphasis:  base01
+        heading:   orange
+        link:      blue
+        visited:   violet
+        hover:     cyan
+      background:
+        primary:   base3
+        secondary: base2
+        embed:     base02
+    dark:
+      label: Solarized Dark
+      syntax: base16/solarized-dark
+      palette:
+        base03:  '#fdf6e3'
+        base02:  '#eee8d5'
+        base01:  '#93a1a1'
+        base00:  '#839496'
+        base0:   '#657b83'
+        base1:   '#586e75'
+        base2:   '#073642'
+        base3:   '#002b36'
+        yellow:  '#b58900'
+        orange:  '#cb4b16'
+        red:     '#dc322f'
+        magenta: '#d33682'
+        violet:  '#6c71c4'
+        blue:    '#268bd2'
+        cyan:    '#2aa198'
+        green:   '#859900'
+      text:
+        primary:   base00
+        secondary: base0
+        emphasis:  base1
+        heading:   orange
+        link:      blue
+        visited:   violet
+        hover:     cyan
+      background:
+        primary:   base3
+        secondary: base2
+        embed:     base1
+  rosepine:
+    light:
+      label: Rosé Pine Dawn
+      syntax: base16/ros-pine-dawn
+      palette:
+        '_src':
+          base:    '#faf4ed'
+          surface: '#fffaf3'
+          overlay: '#f2e9e1'
+          muted:   '#9893a5'
+          subtle:  '#797593'
+          text:    '#575279'
+          love:    '#b4637a'
+          gold:    '#ea9d34'
+          rose:    '#d7827e'
+          pine:    '#286983'
+          foam:    '#56949f'
+          iris:    '#907aa9'
+          highlight:
+            low:   '#f4ede8'
+            med:   '#dfdad9'
+            high:  '#cecacd'
+        base03:  '#26233a'
+        base02:  '#555169'
+        base01:  '#797593'
+        base00:  '#9893a5'
+        base0:   '#cecacd'
+        base1:   '#f2e9de'
+        base2:   '#faf4ed'
+        base3:   '#fffaf3'
+        yellow:  '#ea9d34'
+        orange:  '#d7827e'
+        red:     '#b4637a'
+        magenta: '#c4a7e7'
+        violet:  '#907aa9'
+        blue:    '#56949f'
+        cyan:    '#9ccfd8'
+        green:   '#286983'
+      text:
+        primary:   base00
+        secondary: base0
+        emphasis:  base01
+        heading:   orange
+        link:      blue
+        visited:   violet
+        hover:     cyan
+      background:
+        primary:   base2
+        secondary: base3
+        embed:     base01
+    dark:
+      label: Rosé Pine Moon
+      syntax: base16/ros-pine-moon
+      palette:
+        '_src':
+          base:    '#232136'
+          surface: '#2a273f'
+          overlay: '#393552'
+          muted:   '#6e6a86'
+          subtle:  '#908caa'
+          text:    '#e0def4'
+          love:    '#eb6f92'
+          gold:    '#f6c177'
+          rose:    '#ee9a97'
+          pine:    '#3e8fb0'
+          foam:    '#9ccfd8'
+          iris:    '#c4a7e7'
+          highlight:
+            low:   '#2a283e'
+            med:   '#44415a'
+            high:  '#56526e'
+        base03:  '#fffaf3'
+        base02:  '#d9d7e1'
+        base01:  '#e0def4'
+        base00:  '#6e6a86'
+        base0:   '#908caa'
+        base1:   '#393552'
+        base2:   '#2a273f'
+        base3:   '#232136'
+        yellow:  '#f6c177'
+        orange:  '#ee9a97'
+        red:     '#eb6f92'
+        magenta: '#c4a7e7'
+        violet:  '#907aa9'
+        blue:    '#3e8fb0'
+        cyan:    '#9ccfd8'
+        green:   '#286983'
+      text:
+        primary:   base00
+        secondary: base0
+        emphasis:  base01
+        heading:   orange
+        link:      blue
+        visited:   magenta
+        hover:     cyan
+      background:
+        primary:   base3
+        secondary: base2
+        embed:     green

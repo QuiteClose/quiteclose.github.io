@@ -34,6 +34,19 @@
 .#{$scheme} .text-cyan { color: $cyan; }
 .#{$scheme} .text-green { color: $green; }
 ///////////////////////////////////////////////////////////////////////////////
+// $scheme UI Colors
+///////////////////////////////////////////////////////////////////////////////
+.#{$scheme} .background-primary { background-color: $backgroundPrimary; }
+.#{$scheme} .background-secondary { background-color: $backgroundSecondary; }
+.#{$scheme} .background-embed { background-color: $backgroundEmbed; }
+.#{$scheme} .text-primary { color: $textPrimary; }
+.#{$scheme} .text-secondary { color: $textSecondary; }
+.#{$scheme} .text-emphasis { color: $textEmphasis; }
+.#{$scheme} .text-heading { color: $textHeading; }
+.#{$scheme} .text-link { color: $textLink; }
+.#{$scheme} .text-visited { color: $textVisited; }
+.#{$scheme} .text-hover { color: $textHover; }
+///////////////////////////////////////////////////////////////////////////////
 // $scheme Specific Colors
 ///////////////////////////////////////////////////////////////////////////////
 .#{$scheme}-background-base03 { background-color: $base03; }
@@ -71,30 +84,30 @@
 ///////////////////////////////////////////////////////////////////////////////
 // $scheme Layout Colors
 ///////////////////////////////////////////////////////////////////////////////
-.#{$scheme} { background-color: $base2; color: $base0; }
+.#{$scheme} { background-color: $backgroundSecondary; color: $textPrimary; }
 
-.#{$scheme} a { color: $blue; }
-.#{$scheme} a:visited { color: $violet; }
+.#{$scheme} a { color: $textLink; }
+.#{$scheme} a:visited { color: $textVisited; }
+.#{$scheme} a:hover { color: $textHover; }
+.#{$scheme} :is(header, h1, h2, h3, h4, h5, h6) { color: $textSecondary; }
 
-.#{$scheme} #color-scheme-panel { background-color: $base3; }
-.#{$scheme} .color-scheme-panel-content .slider{ border-color: $base1}
-.#{$scheme} .color-scheme-button { background-color: $base2; }
-.#{$scheme} .color-scheme-button>div { }
+.#{$scheme} #color-scheme-panel { background-color: $backgroundPrimary; }
+.#{$scheme} .color-scheme-panel-content .slider{ border-color: $textPrimary; }
+.#{$scheme} .color-scheme-button { background-color: $backgroundSecondary; }
 
-.#{$scheme} :is(header, h1, h2, h3, h4, h5, h6) { color: $base0; }
-.#{$scheme} #site-heading p { color: $base01; }
+.#{$scheme} #site-heading p { color: $textPrimary; }
 
-.#{$scheme}>header a { color: $base0; }
-.#{$scheme}>header a:visited { color: $base0; }
-.#{$scheme}>header a:hover { color: $blue; }
+.#{$scheme}>header a { color: $textPrimary; }
+.#{$scheme}>header a:visited { color: $textPrimary; }
+.#{$scheme}>header a:hover { color: $textHover; }
 
 $current-page-nav-color: $orange;
-.#{$scheme}.page-home a.page-home { color: $current-page-nav-color; }
-.#{$scheme}.page-home a.page-home:visited { color: $current-page-nav-color; }
-.#{$scheme}.page-about a.page-about { color: $current-page-nav-color; }
-.#{$scheme}.page-about a.page-about:visited { color: $current-page-nav-color; }
+.#{$scheme}.page-home a.page-home { color: $textHeading; }
+.#{$scheme}.page-home a.page-home:visited { color: $textHeading; }
+.#{$scheme}.page-about a.page-about { color: $textHeading; }
+.#{$scheme}.page-about a.page-about:visited { color: $textHeading; }
 
-.#{$scheme}>main {background-color: $base3; }
+.#{$scheme}>main {background-color: $backgroundPrimary; }
 
-.#{$scheme} article.post>header h1 { color: $current-page-nav-color; }
-.#{$scheme} article.post .embed-right { border-color: $base03; }
+.#{$scheme} article.post>header h1 { color: $textHeading; }
+.#{$scheme} article.post .embed-right { background-color: $backgroundEmbed; border-color: $backgroundEmbed; }

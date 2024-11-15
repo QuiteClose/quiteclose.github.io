@@ -1,10 +1,84 @@
 ---
 ---
 @import "layouts/default";
-{% for scheme in site.data.color-schemes.default %}
-/* ColorScheme: {{ scheme }} */
-@import "color-schemes/{{ scheme }}-dark";
+/* --- Color Schemes --- */
+
+{% assign modes = "dark light" | split: " " %}
+{% for scheme in site.data.color-controls.layouts.default.enabled %}
+{%   for mode in modes %}
+// Set variables for each color scheme
+{%     assign theme = site.data.color-controls["schemes"][scheme][mode] %}
+{%     assign textPrimary = theme["text"]["primary"] %}
+{%     assign textSecondary = theme["text"]["secondary"] %}
+{%     assign textEmphasis = theme["text"]["emphasis"] %}
+{%     assign textHeading = theme["text"]["heading"] %}
+{%     assign textLink = theme["text"]["link"] %}
+{%     assign textVisited = theme["text"]["visited"] %}
+{%     assign textHover = theme["text"]["hover"] %}
+{%     assign backgroundPrimary = theme["background"]["primary"] %}
+{%     assign backgroundSecondary = theme["background"]["secondary"] %}
+{%     assign backgroundEmbed = theme["background"]["embed"] %}
+$scheme:  '{{ scheme }}-{{ mode }}';
+$base03:  {{ theme["palette"]["base03"] }};
+$base02:  {{ theme["palette"]["base02"] }};
+$base01:  {{ theme["palette"]["base01"] }};
+$base00:  {{ theme["palette"]["base00"] }};
+$base0:   {{ theme["palette"]["base0"] }};
+$base1:   {{ theme["palette"]["base1"] }};
+$base2:   {{ theme["palette"]["base2"] }};
+$base3:   {{ theme["palette"]["base3"] }};
+$yellow:  {{ theme["palette"]["yellow"] }};
+$orange:  {{ theme["palette"]["orange"] }};
+$red:     {{ theme["palette"]["red"] }};
+$magenta: {{ theme["palette"]["magenta"] }};
+$violet:  {{ theme["palette"]["violet"] }};
+$blue:    {{ theme["palette"]["blue"] }};
+$cyan:    {{ theme["palette"]["cyan"] }};
+$green:   {{ theme["palette"]["green"] }};
+$textPrimary:   {{ theme["palette"][textPrimary] }};
+$textSecondary: {{ theme["palette"][textSecondary] }};
+$textEmphasis:  {{ theme["palette"][textEmphasis] }};
+$textHeading:   {{ theme["palette"][textHeading] }};
+$textLink:      {{ theme["palette"][textLink] }};
+$textVisited:   {{ theme["palette"][textVisited] }};
+$textHover:     {{ theme["palette"][textHover] }};
+$backgroundPrimary:   {{ theme["palette"][backgroundPrimary] }};
+$backgroundSecondary: {{ theme["palette"][backgroundSecondary] }};
+$backgroundEmbed:     {{ theme["palette"][backgroundEmbed] }};
+// Print a helpful key for anyone browsing the compiled CSS
+/* {{ scheme }}-{{ mode }}:
+/*   label: {{ theme["label"] }}
+/*   palette:
+/*     base03:  {{ theme["palette"]["base03"] }}
+/*     base02:  {{ theme["palette"]["base02"] }}
+/*     base01:  {{ theme["palette"]["base01"] }}
+/*     base00:  {{ theme["palette"]["base00"] }}
+/*     base0:   {{ theme["palette"]["base0"] }}
+/*     base1:   {{ theme["palette"]["base1"] }}
+/*     base2:   {{ theme["palette"]["base2"] }}
+/*     base3:   {{ theme["palette"]["base3"] }}
+/*     yellow:  {{ theme["palette"]["yellow"] }}
+/*     orange:  {{ theme["palette"]["orange"] }}
+/*     red:     {{ theme["palette"]["red"] }}
+/*     magenta: {{ theme["palette"]["magenta"] }}
+/*     violet:  {{ theme["palette"]["violet"] }}
+/*     blue:    {{ theme["palette"]["blue"] }}
+/*     cyan:    {{ theme["palette"]["cyan"] }}
+/*     green:   {{ theme["palette"]["green"] }}
+/*   text:
+/*     primary:   {{ theme["text"]["primary"] }}
+/*     secondary: {{ theme["text"]["secondary"] }}
+/*     emphasis:  {{ theme["text"]["emphasis"] }}
+/*     heading:   {{ theme["text"]["heading"] }}
+/*     link:      {{ theme["text"]["link"] }}
+/*     visited:   {{ theme["text"]["visited"] }}
+/*     hover:     {{ theme["text"]["hover"] }}
+/*   background:
+/*     primary:   {{ theme["background"]["primary"] }}
+/*     secondary: {{ theme["background"]["secondary"] }}
+/*     embed:     {{ theme["background"]["embed"] }}
+*/
+// After setting variables for each color scheme, import the layout colors
 @import "layouts/default/_scheme";
-@import "color-schemes/{{ scheme }}-light";
-@import "layouts/default/_scheme";
+{%   endfor %}
 {% endfor %}

@@ -33,16 +33,13 @@ resetCodeEditor_{{ include.id }}(`{{ include.content }}`);
   // Apply the colour scheme
   var colorSchemeApplied = localStorage.getItem('colorSchemeApplied');
   const schemeMap = {
-    "borland-light": "default",
-    "borland-dark": "far",
-    "crt-dark": "base16/green-screen",
-    "crt-light": "base16/green-screen",
-    "dune-dark": "base16/atelier-dune",
-    "dune-light": "base16/atelier-dune-light",
-    "solarized-light": "base16/solarized-light",
-    "solarized-dark":  "base16/solarized-dark",
-    "rose-pine-dark":  "base16/ros-pine-moon",
-    "rose-pine-light":  "base16/ros-pine-dawn",
+{% assign modes = "light dark"|split: " " %}
+{% for mode in modes %}
+{%   for scheme in site.data.color-controls.layouts.default %}
+{%     assign theme = site.data.color-controls.schemes[scheme][mode]["syntax"] %}
+    "{{scheme}}-{{mode}}": "{{theme}}",
+{%   endfor %}
+{% endfor %}
   };
   HighlightedCode.useTheme(schemeMap[colorSchemeApplied]||"base16"+colorSchemeApplied);
   // Setup the Callback for colour scheme changes
@@ -52,6 +49,6 @@ resetCodeEditor_{{ include.id }}(`{{ include.content }}`);
     const textareaContent = document.getElementById('{{ include.id }}').value;
     resetCodeEditor_{{ include.id }}(textareaContent);
   }
-  ColorSchemeChangeCallbacks.HighlightedCode{{ include.id }} = Callback;
+  registerColorControlCallback("HighlightedCode{{include.id}}", Callback);
 })(self);
 </script>
