@@ -84,8 +84,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // $scheme Layout Colors
 ///////////////////////////////////////////////////////////////////////////////
-.#{$scheme} { background-color: $backgroundSecondary; color: $textPrimary; }
-
+.#{$scheme} { background-color: $backgroundSecondary; color: $textPrimary; scrollbar-color: $textSecondary $textPrimary; }
 .#{$scheme} a { color: $textLink; }
 .#{$scheme} a:visited { color: $textVisited; }
 .#{$scheme} a:hover { color: $textHover; }
@@ -94,6 +93,7 @@
 .#{$scheme} #color-scheme-panel { background-color: $backgroundPrimary; }
 .#{$scheme} .color-scheme-panel-content .slider{ border-color: $textPrimary; }
 .#{$scheme} .color-scheme-button { background-color: $backgroundSecondary; }
+.#{$scheme} .color-scheme-panel-selector label:hover { color: $base03; background-color: $base1; }
 
 .#{$scheme} #site-heading p { color: $textPrimary; }
 

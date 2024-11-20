@@ -30,33 +30,37 @@ body.colors-loaded {
 }
 
 div#color-scheme-panel {
-  position: fixed;
-  top: 0; right: 0;
-  width: 8ex; height: 3ex;
-  z-index: $zTop;
-  overflow: hidden;
-  text-align: right;
+  /* UI for selecting color schemes */
+  position: fixed; top: 0; right: 0; z-index: $zTop;
+  width: 10ex; height: 5ex;
+  overflow: hidden; text-align: right;
+  border-left: 1px solid; border-bottom: 1px solid;
   border-bottom-left-radius: 0.3ex;
-  padding: 1ex;
-  border-left: 1px solid;
-  border-bottom: 1px solid;
   -webkit-transition: .4s;
   transition: .4s;
 }
 
-#color-scheme-panel label {
-}
+$colorSchemePanelHeight: 15.75ex;
 
 .color-scheme-selector-open  {
-  margin-top: 18ex;
+  /* toggled body class */
+  margin-top: $colorSchemePanelHeight;
 }
 
 .color-scheme-selector-open div#color-scheme-panel {
+  /* toggled panel expand */
   width: 100%;
-  height: 16ex;
+  height: $colorSchemePanelHeight;
+  border-radius: 0ex;
   -webkit-transition: .4s;
   transition: .4s;
 }
+
+.color-scheme-selector-open pre.highlighted-code {
+  /* hack to avoid de-sync of textareas and highlight.js widgets */
+  margin-top: $colorSchemePanelHeight;
+}
+
 
 .color-scheme-panel-control {
   display: block;
@@ -70,40 +74,30 @@ div#color-scheme-panel {
 }
 .color-scheme-panel-control button {
   position: fixed;
-  top: 2ex;
-  right: 2ex;
+  top: 1ex;
+  right: 1ex;
 }
 
 .color-scheme-panel-selector {
-  position: absolute;
-  height: 13ex;
-  top: 5ex;
-  right: 0; left: 0;
-  display: flex;
-  overflow-x: scroll;
-  overflow-y: hidden;
-  white-space: nowrap;
-}
-
-.color-scheme-panel-selector>div {
-  display: inline-block;
-  padding: 0.5ex;
-  margin: 0.5ex;
-  border-radius: 0.5ex;
+  margin-top: 5ex; padding: 0 0.5ex;
+  overflow-x: auto; overflow-y: hidden; white-space: nowrap;
+  vertical-align: bottom;
 }
 
 .color-scheme-panel-selector label {
   display: inline-block;
-  padding: 0.5ex;
-  font-size: 75%;
-  width: 10ex;
-  text-align: center;
-  min-height: 10ex;
+  margin: 0; padding: 0.5ex;
+  margin-bottom: 0.2ex; padding-bottom: 0ex;
+  vertical-align: top; text-align: right;
+  font-size: 66%;
+  font-style: Italic;
+  width: 9ex; height: 14ex;
   white-space: wrap;
+  border-radius: 0.5ex;
 }
 
 .color-scheme-panel-selector .color-scheme-button {
-  font-size: 140%;
+  font-size: 150%;
 }
 
 .color-scheme-button{
