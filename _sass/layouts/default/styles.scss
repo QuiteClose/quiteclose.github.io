@@ -1,7 +1,10 @@
 // z-index layers
-$zNormal: 0;
-$zTop: 1;
+$zNormal: 1;
+$zColorSchemeWrapper: 9;
+$zColorSchemePanel: 10;
+$zTop: 10;
 
+// standard disable selection class
 .noselect {
   -webkit-touch-callout: none; /* iOS Safari */
     -webkit-user-select: none; /* Safari */
@@ -29,9 +32,15 @@ body.colors-loaded {
   transition: .4s;
 }
 
+div#color-scheme-click-away {
+  /* A deadzone to catch click-away events */
+  position: fixed; top: 0; right: 0; z-index: $zColorSchemeWrapper;
+  width: 0; height: 0;
+}
+
 div#color-scheme-panel {
   /* UI for selecting color schemes */
-  position: fixed; top: 0; right: 0; z-index: $zTop;
+  position: fixed; top: 0; right: 0; z-index: $zColorSchemePanel;
   width: 10ex; height: 5ex;
   overflow: hidden; text-align: right;
   border-left: 1px solid; border-bottom: 1px solid;
@@ -45,6 +54,11 @@ $colorSchemePanelHeight: 15.75ex;
 .color-scheme-selector-open  {
   /* toggled body class */
   margin-top: $colorSchemePanelHeight;
+}
+
+.color-scheme-selector-open div#color-scheme-click-away {
+  position: fixed; top: 0; right: 0;
+  width: 100vw; height: 100vh;
 }
 
 .color-scheme-selector-open div#color-scheme-panel {

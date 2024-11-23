@@ -1,3 +1,5 @@
+<div id="color-scheme-click-away" onmousedown="toggleColorSchemeSelector()">
+</div>
 <div id="color-scheme-panel">
   <div class="color-scheme-panel-control noselect">
     <label class="switch">
@@ -43,6 +45,7 @@
     </label>
 {% endfor %}
   </div>
+</div>
 <script language="javascript">
 /* callbacks for color scheme changes */
 const colorControlCallbacks = {};
@@ -183,4 +186,3 @@ function initColorScheme() {
 
 initColorScheme();
 </script>
-</div>
