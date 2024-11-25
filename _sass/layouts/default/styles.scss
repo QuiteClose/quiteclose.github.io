@@ -15,7 +15,6 @@ $zTop: 10;
                                   supported by Chrome and Opera */
 }
 
-
 body {
   font-size: 24px;
   font-family: "Merriweather", serif;
@@ -53,7 +52,7 @@ $colorSchemePanelHeight: 15.75ex;
 
 .color-scheme-selector-open  {
   /* toggled body class */
-  margin-top: $colorSchemePanelHeight;
+  /* margin-top: $colorSchemePanelHeight; */
 }
 
 .color-scheme-selector-open div#color-scheme-click-away {
@@ -68,6 +67,18 @@ $colorSchemePanelHeight: 15.75ex;
   border-radius: 0ex;
   -webkit-transition: .4s;
   transition: .4s;
+}
+
+button.color-scheme-button-collapse {
+  visibility: hidden;
+}
+
+.color-scheme-selector-open button.color-scheme-button-expand {
+  visibility: hidden;
+}
+
+.color-scheme-selector-open button.color-scheme-button-collapse {
+  visibility: visible;
 }
 
 .color-scheme-selector-open pre.highlighted-code {
@@ -90,6 +101,9 @@ $colorSchemePanelHeight: 15.75ex;
   position: fixed;
   top: 1ex;
   right: 1ex;
+  width: 6ex;
+  height: 6ex;
+  cursor: pointer;
 }
 
 .color-scheme-panel-selector {
@@ -108,28 +122,33 @@ $colorSchemePanelHeight: 15.75ex;
   width: 9ex; height: 14ex;
   white-space: wrap;
   border-radius: 0.5ex;
+  cursor: pointer;
 }
 
 .color-scheme-panel-selector .color-scheme-button {
   font-size: 150%;
 }
 
-.color-scheme-button{
+.color-scheme-button {
   display: inline-block;
-  width: 6ex;
-  height: 6ex;
   padding: 0;
   margin: 0;
+  width: 6ex;
+  height: 6ex;
+  cursor: pointer;
 }
 
 .color-scheme-button>div {
+  width: 100%; height: 100%;
   display: flex;
   flex-direction: row-reverse;
   flex-wrap: wrap;
   justify-content: space-evenly;
   align-content: space-evenly;
-  width: 100%;
-  height: 100%;
+}
+
+.color-scheme-button div.buttonIcon {
+  font-size: 150%;
 }
 
 .color-scheme-button div.button9 {
