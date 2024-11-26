@@ -47,7 +47,7 @@ input:checked + .slider:before {
   visibility: visible;
   font-size: 45%;
   position: absolute;
-  left: 3.8ex; top: 0.6ex;
+  left: 4ex; top: 1ex;
   -webkit-transition: .4s;
   transition: .4s;
 }
@@ -56,7 +56,7 @@ input:checked + .slider:before {
   visibility: hidden;
   font-size: 45%;
   position: absolute;
-  left: 0.6ex; top: 0.6ex;
+  left: 0.8ex; top: 1ex;
   transition: .1s;
 }
 

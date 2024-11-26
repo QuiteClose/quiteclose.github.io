@@ -37,10 +37,15 @@ div#color-scheme-click-away {
   width: 0; height: 0;
 }
 
+.color-scheme-selector-open div#color-scheme-click-away {
+  position: fixed; top: 0; right: 0;
+  width: 100vw; height: 100vh;
+}
+
 div#color-scheme-panel {
   /* UI for selecting color schemes */
   position: fixed; top: 0; right: 0; z-index: $zColorSchemePanel;
-  width: 10ex; height: 5ex;
+  width: 9.25ex; height: 4.25ex;
   overflow: hidden; text-align: right;
   border-left: 1px solid; border-bottom: 1px solid;
   border-bottom-left-radius: 0.3ex;
@@ -48,22 +53,9 @@ div#color-scheme-panel {
   transition: .4s;
 }
 
-$colorSchemePanelHeight: 15.75ex;
-
-.color-scheme-selector-open  {
-  /* toggled body class */
-  /* margin-top: $colorSchemePanelHeight; */
-}
-
-.color-scheme-selector-open div#color-scheme-click-away {
-  position: fixed; top: 0; right: 0;
-  width: 100vw; height: 100vh;
-}
 
 .color-scheme-selector-open div#color-scheme-panel {
-  /* toggled panel expand */
-  width: 100%;
-  height: $colorSchemePanelHeight;
+  width: 100%; height: 15.75ex;
   border-radius: 0ex;
   -webkit-transition: .4s;
   transition: .4s;
@@ -81,33 +73,26 @@ button.color-scheme-button-collapse {
   visibility: visible;
 }
 
-.color-scheme-selector-open pre.highlighted-code {
-  /* hack to avoid de-sync of textareas and highlight.js widgets */
-  margin-top: $colorSchemePanelHeight;
-}
-
-
 .color-scheme-panel-control {
   display: block;
   font-size: 1.3em;
 }
 
 .color-scheme-panel-control label {
-  position: fixed;
-  top: 1ex;
-  right: 4ex;
+  position: absolute;
+  top: 0.75ex;
+  right: 3.5ex;
 }
 .color-scheme-panel-control button {
-  position: fixed;
-  top: 1ex;
-  right: 1ex;
-  width: 6ex;
-  height: 6ex;
+  position: absolute;
+  top: 0.5ex; right: 0.5ex;
+  width: 1.25em; height: 1.25em;
   cursor: pointer;
 }
 
 .color-scheme-panel-selector {
-  margin-top: 5ex; padding: 0 0.5ex;
+  margin: 0; padding: 0;
+  padding-top: 5ex;
   overflow-x: auto; overflow-y: hidden; white-space: nowrap;
   vertical-align: bottom;
 }
@@ -148,7 +133,6 @@ button.color-scheme-button-collapse {
 }
 
 .color-scheme-button div.buttonIcon {
-  font-size: 150%;
 }
 
 .color-scheme-button div.button9 {
