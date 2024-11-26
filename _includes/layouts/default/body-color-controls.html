@@ -27,7 +27,7 @@
       </div>
     </button>
   </div>
-  <div class="color-scheme-panel-selector">
+  <div class="color-scheme-panel-selector noselect">
 {% for theme in site.data.color-controls.layouts.default.selectable %}
 {%   assign scheme = theme|split: '-' | first %}
 {%   assign mode = theme|split: '-' | last %}
