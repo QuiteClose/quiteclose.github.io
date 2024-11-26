@@ -280,7 +280,7 @@ schemes:
         embed:     base1
   rosepine:
     light:
-      label: Rosé Pine Dawn
+      label: Rosé&nbsp;Pine Dawn
       syntax: base16/ros-pine-dawn
       palette:
         '_src':
@@ -329,7 +329,7 @@ schemes:
         secondary: base3
         embed:     base01
     dark:
-      label: Rosé Pine Moon
+      label: Rosé&nbsp;Pine Moon
       syntax: base16/ros-pine-moon
       palette:
         '_src':
