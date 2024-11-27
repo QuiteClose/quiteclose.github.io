@@ -11,6 +11,7 @@
     {% else %}
     <title>{{ site.title }}</title>
     {% endif %}
+    {% include google-analytics.html %}
   </head>
 {% if page.class %}
   <body class="{{ page.class }}">
