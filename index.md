@@ -6,6 +6,12 @@ class: page-home
 
 This site is under-construction. You won't find much here yet.
 
+{% if jekyll.environment == "production" %}
+    Production!
+{% else %}
+    Not production!
+{% endif %}
+
 <ul>
   {% for post in site.posts %}
     <li>
