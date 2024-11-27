@@ -1,3 +1,6 @@
+{% if jekyll.environment != "production" %}
+<!-- Non-production build. Skipping Google Analytics -->
+{% else %}
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-E559MY3P8T"></script>
 <script>
@@ -7,3 +10,4 @@
 
   gtag('config', 'G-E559MY3P8T');
 </script>
+{% endif %}
