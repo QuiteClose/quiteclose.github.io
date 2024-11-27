@@ -3,18 +3,16 @@ layout: default
 title: "About"
 class: page-about
 ---
-
 Many of my earliest memories are from trying to solve problems on the
 command-line. Now I'm a professional programmer and it doesn't seem so
-different after all.
+different after all. That said, a playful spirit deserves some cultivation -
+and this website is an *invitation* to myself to remember & share that spirit.
 
-<div>
-  Incase you want to contact me:
-  <ul>
-    <li><span class="fa-brands fa-github"></span>&nbsp;<a href="https://github.com/QuiteClose">QuiteClose</a></li>
-    <li><span class="fa-brands fa-x-twitter"></span>&nbsp;<a href="https://twitter.com/QuiteClose">QuiteClose</a></li>
-  </ul>
-</div>
+<ul class="socials">
+  <li><a href="https://github.com/QuiteClose"><span class="fa-brands fa-github"></span>&nbsp;GitHub</a></li>
+  <li><a href="https://x.com/QuiteClose"><span class="fa-brands fa-x-twitter"></span>&nbsp;Twitter</a></li>
+  <li><a href="https://bsky.app/profile/quiteclose.bsky.social"><span class="fa-brands fa-bluesky"></span>&nbsp;BlueSky</a></li>
+</ul>
 
 ---
 
