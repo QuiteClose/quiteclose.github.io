@@ -29,26 +29,29 @@ resetCodeEditor_{{ include.id }}(`{{ include.content }}`);
 // Source: https://www.npmjs.com/package/highlighted-code
 (async ({chrome, netscape}) => {
   // Import HighlightedCode to customize textareas
-  const {default: HighlightedCode} = await import('https://unpkg.com/highlighted-code');
-  // Apply the colour scheme
-  var colorSchemeApplied = localStorage.getItem('colorSchemeApplied');
+  //const {default: HighlightedCode} = await import('https://unpkg.com/highlighted-code');
+  const {default: HighlightedCode} = await import('/assets/scripts/highlighted-code/min.js');
+  // Map colour schemes to Highlight.js themes
   const schemeMap = {
 {% assign modes = "light dark"|split: " " %}
 {% for mode in modes %}
-{%   for scheme in site.data.color-controls.layouts.default %}
+{%   for scheme in site.data.color-controls.layouts.default.enabled %}
 {%     assign theme = site.data.color-controls.schemes[scheme][mode]["syntax"] %}
     "{{scheme}}-{{mode}}": "{{theme}}",
 {%   endfor %}
 {% endfor %}
   };
-  HighlightedCode.useTheme(schemeMap[colorSchemeApplied]||"base16"+colorSchemeApplied);
   // Setup the Callback for colour scheme changes
   var Callback = function() {
-    var targetColorScheme = localStorage.getItem('colorSchemeApplied');
-    HighlightedCode.useTheme(schemeMap[targetColorScheme]);
-    const textareaContent = document.getElementById('{{ include.id }}').value;
-    resetCodeEditor_{{ include.id }}(textareaContent);
+    const colorSchemeApplied = localStorage.getItem('colorSchemeApplied');
+    const theme = schemeMap[colorSchemeApplied]||"base16/"+colorSchemeApplied;
+    console.log("{{include.id}} callback theme: "+theme);
+    HighlightedCode.changeTheme(theme);
   }
-  registerColorControlCallback("HighlightedCode{{include.id}}", Callback);
+  registerColorControlCallback("HighlightedCode", Callback);
+  const colorSchemeApplied = localStorage.getItem('colorSchemeApplied');
+  const theme = schemeMap[colorSchemeApplied]||"base16/"+colorSchemeApplied;
+  console.log("{{include.id}} callback theme: "+theme);
+  HighlightedCode.useTheme(theme);
 })(self);
 </script>
