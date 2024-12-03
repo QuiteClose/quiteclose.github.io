@@ -47,6 +47,7 @@ div#color-scheme-panel {
   /* UI for selecting color schemes */
   position: fixed; top: 0; right: 0; z-index: $zColorSchemePanel;
   width: 9.25ex; height: 4.25ex;
+  min-width: 9.25ex; min-height: 4.25ex;
   overflow: hidden; text-align: right;
   margin: 0; padding: 0;
   border-left: 1px solid; border-bottom: 1px solid;
@@ -58,6 +59,7 @@ div#color-scheme-panel {
 
 .color-scheme-selector-open div#color-scheme-panel {
   width: 100%; height: 15.5ex;
+  min-width: 100%; min-height: 15.5ex;
   border-radius: 0ex;
   -webkit-transition: .4s;
   transition: .4s;
