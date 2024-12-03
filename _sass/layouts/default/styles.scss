@@ -16,6 +16,7 @@ $zTop: 10;
 }
 
 body {
+  margin: 0; padding: 0;
   font-size: 24px;
   font-family: "Merriweather", serif;
   z-index: $zNormal;
@@ -56,7 +57,7 @@ div#color-scheme-panel {
 
 
 .color-scheme-selector-open div#color-scheme-panel {
-  width: 100%; height: 15ex;
+  width: 100%; height: 15.5ex;
   border-radius: 0ex;
   -webkit-transition: .4s;
   transition: .4s;
@@ -64,10 +65,10 @@ div#color-scheme-panel {
 
 .color-scheme-button {
   display: inline-block;
-  padding: 0;
-  margin: 0;
-  width: 6ex;
-  height: 6ex;
+  margin: 0; padding: 0;
+  width: 6ex; height: 6ex;
+  border-radius: 0.5ex;
+  overflow: hidden;
   cursor: pointer;
 }
 
@@ -143,14 +144,16 @@ button.color-scheme-button-collapse {
   vertical-align: top; text-align: center;
   font-size: 66%;
   font-style: Italic;
-  width: 9ex; height: auto;
+  width: 9.5ex; height: auto;
   white-space: wrap;
-  border-radius: 0.5ex;
+  border-radius: 1ex;
+  border: 0.25ex dashed transparent;
   cursor: pointer;
 }
 
 .color-scheme-panel-selector > label > button {
   width: 8ex; height: 8ex;
+  border-radius: 1.25ex;
 }
 
 .color-scheme-panel-selector > label > div {

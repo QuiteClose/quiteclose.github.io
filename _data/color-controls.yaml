@@ -4,24 +4,36 @@ layouts:
       - borland
       - crt
       - dune
+      - github
+      - gruvbox
       - rosepine
       - solarized
+      - srcery
+      - tomorrow
     selectable:
+      - borland-light
+      - tomorrow-light
+      - rosepine-light
+      - github-light
+      - dune-light
+      - solarized-light
+      - srcery-light
+      - gruvbox-light
       - crt-light
       - crt-dark
-      - borland-dark
-      - borland-light
-      - dune-light
-      - rosepine-light
-      - solarized-light
-      - solarized-dark
       - rosepine-dark
+      - borland-dark
+      - gruvbox-dark
+      - github-dark
+      - solarized-dark
       - dune-dark
+      - tomorrow-dark
+      - srcery-dark
 schemes:
   borland:
     light:
       label: Borland
-      syntax: default
+      syntax: 1c-light
       palette:
         base03:  '#000080'
         base02:  '#0000a8'
@@ -52,7 +64,7 @@ schemes:
         secondary: base2
         embed:     base01
     dark:
-      label: Turbo
+      label: Borland Turbo
       syntax: far
       palette:
         base03:  '#ffffff'
@@ -85,8 +97,8 @@ schemes:
         embed:     base1
   crt:
     light:
-      label: Amber
-      syntax: "base16/amber-screen"
+      label: Amber CRT
+      syntax: "extra/amber-screen"
       palette:
         base03:  '#ffbf00'
         base02:  '#e6aa00'
@@ -117,7 +129,7 @@ schemes:
         secondary: base2
         embed:     base1
     dark:
-      label: Green
+      label: Green CRT
       syntax: base16/green-screen
       palette:
         base03:  '#00ff00'
@@ -213,32 +225,97 @@ schemes:
         primary:   base3
         secondary: base2
         embed:     base02
-  solarized:
+  github:
     light:
-      label: Solarized Light
-      syntax: base16/solarized-light
+      label: GitHub Light
+      syntax: github
       palette:
-        base03:  '#002b36'
-        base02:  '#073642'
-        base01:  '#586e75'
-        base00:  '#657b83'
-        base0:   '#839496'
-        base1:   '#93a1a1'
-        base2:   '#eee8d5'
-        base3:   '#fdf6e3'
-        yellow:  '#b58900'
-        orange:  '#cb4b16'
-        red:     '#dc322f'
-        magenta: '#d33682'
-        violet:  '#6c71c4'
-        blue:    '#268bd2'
-        cyan:    '#2aa198'
-        green:   '#859900'
+        base03:  '#1d1f21'
+        base02:  '#24292e'
+        base01:  '#6a737d'
+        base00:  '#8b949e' 
+        base0:   '#c9d1d9'
+        base1:   '#f0fff4'
+        base2:   '#f6f8fa'
+        base3:   '#ffffff'
+        yellow:  '#735c0f'
+        orange:  '#e36209'
+        red:     '#b31d28'
+        magenta: '#d73a49'
+        violet:  '#6f42c1'
+        blue:    '#032f62'
+        cyan:    '#005cc5'
+        green:   '#22863a'
+      text:
+        primary:   base01
+        secondary: base00
+        emphasis:  base02
+        heading:   base02
+        link:      blue
+        visited:   violet
+        hover:     cyan
+      background:
+        primary:   base3
+        secondary: base2
+        embed:     base01
+    dark:
+      label: GitHub Dark
+      syntax: github-dark
+      palette:
+        base03:  '#ffffff'
+        base02:  '#f6f8fa'
+        base01:  '#f0fff4'
+        base00:  '#c9d1d9'
+        base0:   '#8b949e'
+        base1:   '#6a737d'
+        base2:   '#24292e'
+        base3:   '#1d1f21'
+        yellow:  '#f2cc60'
+        orange:  '#ffa657'
+        red:     '#67060c'
+        magenta: '#ff7b72'
+        violet:  '#d2a8ff'
+        blue:    '#79c0ff'
+        cyan:    '#1f6feb'
+        green:   '#7ee787'
       text:
         primary:   base00
-        secondary: base1
+        secondary: base0
         emphasis:  base01
-        heading:   orange
+        heading:   base02
+        link:      blue
+        visited:   violet
+        hover:     cyan
+      background:
+        primary:   base3
+        secondary: base2
+        embed:     base02
+  gruvbox:
+    light:
+      label: Gruvbox Light
+      syntax: base16/gruvbox-light-hard
+      palette:
+        base03:  '#282828'
+        base02:  '#3c3836'
+        base01:  '#504945'
+        base00:  '#665c54'
+        base0:   '#bdae93'
+        base1:   '#d5c4a1'
+        base2:   '#ebdbb2'
+        base3:   '#f9f5d7'
+        yellow:  '#b57614'
+        orange:  '#af3a03'
+        red:     '#9d0006'
+        magenta: '#d65d0e'
+        violet:  '#8f3f71'
+        blue:    '#076678'
+        cyan:    '#427b58'
+        green:   '#79740e'
+      text:
+        primary:   base01
+        secondary: base00
+        emphasis:  base02
+        heading:   magenta
         link:      blue
         visited:   violet
         hover:     cyan
@@ -247,37 +324,37 @@ schemes:
         secondary: base2
         embed:     base02
     dark:
-      label: Solarized Dark
-      syntax: base16/solarized-dark
+      label: Gruvbox Dark
+      syntax: base16/gruvbox-dark-hard
       palette:
-        base03:  '#fdf6e3'
-        base02:  '#eee8d5'
-        base01:  '#93a1a1'
-        base00:  '#839496'
-        base0:   '#657b83'
-        base1:   '#586e75'
-        base2:   '#073642'
-        base3:   '#002b36'
-        yellow:  '#b58900'
-        orange:  '#cb4b16'
-        red:     '#dc322f'
-        magenta: '#d33682'
-        violet:  '#6c71c4'
-        blue:    '#268bd2'
-        cyan:    '#2aa198'
-        green:   '#859900'
+        base03:  '#fbf1c7'
+        base02:  '#ebdbb2'
+        base01:  '#d5c4a1'
+        base00:  '#bdae93'
+        base0:   '#665c54'
+        base1:   '#504945'
+        base2:   '#3c3836'
+        base3:   '#1d2021'
+        yellow:  '#fabd2f'
+        orange:  '#fe8019'
+        red:     '#fb4934'
+        magenta: '#d65d0e'
+        violet:  '#d3869b'
+        blue:    '#83a598'
+        cyan:    '#8ec07c'
+        green:   '#b8bb26'
       text:
         primary:   base00
         secondary: base0
-        emphasis:  base1
-        heading:   orange
+        emphasis:  base01
+        heading:   magenta
         link:      blue
         visited:   violet
         hover:     cyan
       background:
         primary:   base3
         secondary: base2
-        embed:     base1
+        embed:     base02
   rosepine:
     light:
       label: Rosé&nbsp;Pine Dawn
@@ -377,3 +454,198 @@ schemes:
         primary:   base3
         secondary: base2
         embed:     green
+  solarized:
+    light:
+      label: Solarized Light
+      syntax: base16/solarized-light
+      palette:
+        base03:  '#002b36'
+        base02:  '#073642'
+        base01:  '#586e75'
+        base00:  '#657b83'
+        base0:   '#839496'
+        base1:   '#93a1a1'
+        base2:   '#eee8d5'
+        base3:   '#fdf6e3'
+        yellow:  '#b58900'
+        orange:  '#cb4b16'
+        red:     '#dc322f'
+        magenta: '#d33682'
+        violet:  '#6c71c4'
+        blue:    '#268bd2'
+        cyan:    '#2aa198'
+        green:   '#859900'
+      text:
+        primary:   base00
+        secondary: base1
+        emphasis:  base01
+        heading:   orange
+        link:      blue
+        visited:   violet
+        hover:     cyan
+      background:
+        primary:   base3
+        secondary: base2
+        embed:     base02
+    dark:
+      label: Solarized Dark
+      syntax: base16/solarized-dark
+      palette:
+        base03:  '#fdf6e3'
+        base02:  '#eee8d5'
+        base01:  '#93a1a1'
+        base00:  '#839496'
+        base0:   '#657b83'
+        base1:   '#586e75'
+        base2:   '#073642'
+        base3:   '#002b36'
+        yellow:  '#b58900'
+        orange:  '#cb4b16'
+        red:     '#dc322f'
+        magenta: '#d33682'
+        violet:  '#6c71c4'
+        blue:    '#268bd2'
+        cyan:    '#2aa198'
+        green:   '#859900'
+      text:
+        primary:   base00
+        secondary: base0
+        emphasis:  base1
+        heading:   orange
+        link:      blue
+        visited:   violet
+        hover:     cyan
+      background:
+        primary:   base3
+        secondary: base2
+        embed:     base1
+  srcery:
+    light:
+      label: Srcery Light
+      syntax: "extra/srcery-light"
+      palette:
+        base03:  '#1c1b19'
+        base02:  '#504945'
+        base01:  '#665c54'
+        base00:  '#918175'
+        base0:   '#bdae93'
+        base1:   '#d5c4a1'
+        base2:   '#ebdbb2'
+        base3:   '#fce8c3'
+        yellow:  '#fbb829'
+        orange:  '#d97147'
+        red:     '#ef2f27'
+        magenta: '#ff5c8f'
+        violet:  '#8959a8'
+        blue:    '#4888d4'
+        cyan:    '#0aaeb3'
+        green:   '#98bc37'
+      text:
+        primary:   base01
+        secondary: base00
+        emphasis:  base01
+        heading:   orange
+        link:      blue
+        visited:   violet
+        hover:     cyan
+      background:
+        primary:   base3
+        secondary: base1
+        embed:     base01
+    dark:
+      label: Srcery
+      syntax: srcery
+      palette:
+        base03:  '#fce8c3'
+        base02:  '#ebdbb2'
+        base01:  '#d5c4a1'
+        base00:  '#bdae93'
+        base0:   '#918175'
+        base1:   '#665c54'
+        base2:   '#504945'
+        base3:   '#1c1b19'
+        yellow:  '#fbb829'
+        orange:  '#f99157'
+        red:     '#ef2f27'
+        magenta: '#ff5c8f'
+        violet:  '#8959a8'
+        blue:    '#68a8e4'
+        cyan:    '#0aaeb3'
+        green:   '#98bc37'
+      text:
+        primary:   base00
+        secondary: base0
+        emphasis:  base01
+        heading:   orange
+        link:      blue
+        visited:   violet
+        hover:     cyan
+      background:
+        primary:   base3
+        secondary: base2
+        embed:     base1
+  tomorrow:
+    light:
+      label: Tomorrow
+      syntax: base16/tomorrow
+      palette:
+        base03:  '#1d1f21'
+        base02:  '#282a2e'
+        base01:  '#4d4d4c'
+        base00:  '#969896'
+        base0:   '#b4b7b4'
+        base1:   '#d6d6d6'
+        base2:   '#e0e0e0'
+        base3:   '#ffffff'
+        yellow:  '#eab700'
+        orange:  '#f5871f'
+        red:     '#c82829'
+        magenta: '#a3685a'
+        violet:  '#8959a8'
+        blue:    '#4271ae'
+        cyan:    '#3e999f'
+        green:   '#718c00'
+      text:
+        primary:   base00
+        secondary: base0
+        emphasis:  base01
+        heading:   orange
+        link:      blue
+        visited:   violet
+        hover:     cyan
+      background:
+        primary:   base3
+        secondary: base2
+        embed:     base02
+    dark:
+      label: Tomorrow Night
+      syntax: base16/tomorrow-night
+      palette:
+        base03:  '#ffffff'
+        base02:  '#e0e0e0'
+        base01:  '#cccccc'
+        base00:  '#b4b7b4'
+        base0:   '#999999'
+        base1:   '#515151'
+        base2:   '#393939'
+        base3:   '#2d2d2d'
+        yellow:  '#ffcc66'
+        orange:  '#f99157'
+        red:     '#f2777a'
+        magenta: '#a3685a'
+        violet:  '#cc99cc'
+        blue:    '#6699cc'
+        cyan:    '#66cccc'
+        green:   '#99cc99'
+      text:
+        primary:   base00
+        secondary: base0
+        emphasis:  base1
+        heading:   orange
+        link:      blue
+        visited:   violet
+        hover:     cyan
+      background:
+        primary:   base3
+        secondary: base2
+        embed:     base1

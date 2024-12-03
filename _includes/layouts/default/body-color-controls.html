@@ -32,7 +32,7 @@
 {%   assign scheme = theme|split: '-' | first %}
 {%   assign mode = theme|split: '-' | last %}
 {%   assign label = site.data.color-controls.schemes[scheme][mode]["label"] %}
-    <label>
+<label class="{{scheme}}-{{mode}}-selected">
       <button class="color-scheme-button" onclick="selectColorScheme('{{scheme}}', '{{mode}}');">
         <div class="button9 {{scheme}}-{{mode}}-background-base3">
           <div class="{{scheme}}-{{mode}}-background-red"></div>

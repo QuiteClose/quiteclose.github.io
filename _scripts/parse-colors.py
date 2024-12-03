@@ -3,22 +3,22 @@
 #
 # See: https://github.com/highlightjs/highlight.js/tree/main/src/styles/base16
 #
-COLOR_SCHEME_TEMPLATE = '''$base03:  {base03};
-$base02:  {base02};
-$base01:  {base01};
-$base00:  {base00};
-$base0:   {base0};
-$base1:   {base1};
-$base2:   {base2};
-$base3:   {base3};
-$yellow:  {yellow};
-$orange:  {orange};
-$red:     {red};
-$magenta: {magenta};
-$violet:  {violet};
-$blue:    {blue};
-$cyan:    {cyan};
-$green:   {green};
+COLOR_SCHEME_TEMPLATE = '''base03:  '{base03}'
+base02:  '{base02}'
+base01:  '{base01}'
+base00:  '{base00}'
+base0:   '{base0}'
+base1:   '{base1}'
+base2:   '{base2}'
+base3:   '{base3}'
+yellow:  '{yellow}'
+orange:  '{orange}'
+red:     '{red}'
+magenta: '{magenta}'
+violet:  '{violet}'
+blue:    '{blue}'
+cyan:    '{cyan}'
+green:   '{green}'
 '''
 
 def parse_colors(given):
