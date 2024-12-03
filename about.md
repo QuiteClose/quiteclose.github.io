@@ -5,14 +5,16 @@ class: page-about
 ---
 Many of my earliest memories are from trying to solve problems on the
 command-line. Now I'm a professional programmer and it doesn't seem so
-different after all. That said, a playful spirit deserves some cultivation -
-and this website is an *invitation* to myself to remember & share that spirit.
+different after all. Despite this, I've noticed periods where I've forgotten
+the playful curiosity that got me started. Isn't that the way of things, eh?
+This website is my attempt to jog my memory a bit.
 
-<ul class="socials">
-  <li><a href="https://github.com/QuiteClose"><span class="fa-brands fa-github"></span>&nbsp;GitHub</a></li>
-  <li><a href="https://x.com/QuiteClose"><span class="fa-brands fa-x-twitter"></span>&nbsp;Twitter</a></li>
-  <li><a href="https://bsky.app/profile/quiteclose.bsky.social"><span class="fa-brands fa-bluesky"></span>&nbsp;BlueSky</a></li>
-</ul>
+<p style="width: 12ex; text-align: center; margin-left: 55%;">
+    <em>@QuiteClose</em><br>
+    <a href="https://github.com/QuiteClose"><span class="fa-brands fa-github"></span></a>
+    <a href="https://x.com/QuiteClose"><span class="fa-brands fa-x-twitter"></span></a>
+    <a href="https://bsky.app/profile/quiteclose.bsky.social"><span class="fa-brands fa-bluesky"></span></a>
+</p>
 
 ---
 
