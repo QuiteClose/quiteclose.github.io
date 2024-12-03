@@ -1,8 +1,8 @@
 <header>
-<div id="site-heading">
-  <h1 id="site-title">@QuiteClose</h1>
-  <p>A Computer Programmer's Website.</p>
-  <script>
+  <div id="site-heading">
+    <h1 id="site-title">@QuiteClose</h1>
+    <p>A Computer Programmer's Website.</p>
+    <script>
 function loadURLhostname() {
   var url = window.location.href;
   var hostname = new URL(url).hostname;
@@ -10,9 +10,10 @@ function loadURLhostname() {
   siteTitle.innerHTML = '@'+hostname;
 }
 loadURLhostname();
-  </script>
-</div>
+    </script>
+  </div>
   <nav>
+    {% include layouts/default/body-page-edit-link.html %}
     <ul>
       <li><a class="page-home" href="{{ "/" | relative_url }}">Home</a></li>
       <li><a class="page-about" href="{{ "/about" | relative_url }}">About</a></li>

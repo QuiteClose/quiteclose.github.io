@@ -203,6 +203,11 @@ body>header nav {
     border-top: 1px solid;
 }
 
+body>header nav a.github{
+  float: right;
+  text-decoration: none;
+}
+
 body>header nav ul {
     list-style-type: none;
     display: Inline-Block;
@@ -225,17 +230,19 @@ body>header nav ul li:after{
 }
 
 body>main {
-    clear: both;
-    max-width: 45em;
-    margin: 0 auto;
-    padding: 1ex;
-    border-radius: 1ex;
-    line-height: 1.5;
+  max-width: 45em;
+  margin: 0 auto; padding: 1ex;
+  border-radius: 1ex;
+  line-height: 1.5;
+}
+
+article.post header h1 {
+  margin: 0; padding: 0;
 }
 
 article.post > footer {
-    font-size: 0.75em;
-    text-align: center;
+  font-size: 0.75em;
+  text-align: center;
 }
 
 article.post .embed-right {

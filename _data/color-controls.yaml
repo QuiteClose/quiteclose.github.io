@@ -312,9 +312,9 @@ schemes:
         cyan:    '#427b58'
         green:   '#79740e'
       text:
-        primary:   base01
-        secondary: base00
-        emphasis:  base02
+        primary:   base00
+        secondary: base0
+        emphasis:  base01
         heading:   magenta
         link:      blue
         visited:   violet

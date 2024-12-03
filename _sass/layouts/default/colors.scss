@@ -102,8 +102,10 @@ html:has(body.#{$scheme}) { scrollbar-color: $textSecondary $textPrimary; }
 .#{$scheme}>header a { color: $textPrimary; }
 .#{$scheme}>header a:visited { color: $textPrimary; }
 .#{$scheme}>header a:hover { color: $textHover; }
+.#{$scheme}>header>nav>a.github {color: $textSecondary; }
+.#{$scheme}>header>nav>a.github:visited {color: $textSecondary; }
+.#{$scheme}>header>nav>a.github:hover {color: $textHover; }
 
-$current-page-nav-color: $orange;
 .#{$scheme}.page-home a.page-home { color: $textHeading; }
 .#{$scheme}.page-home a.page-home:visited { color: $textHeading; }
 .#{$scheme}.page-about a.page-about { color: $textHeading; }
