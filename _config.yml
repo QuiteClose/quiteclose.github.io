@@ -1,0 +1,13 @@
+title: "@QuiteClose"
+url: https://quiteclose.github.io
+baseurl: /
+permalink: /:categories/:year/:month/:day/:title/
+exclude:
+  - .gitignore
+  - .sass-cache
+  - "*.css.map"
+  - Gemfile
+  - Gemfile.lock
+  - LICENSE
+  - Makefile
+  - README.md
