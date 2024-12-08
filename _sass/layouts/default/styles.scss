@@ -17,7 +17,7 @@ $zTop: 10;
 
 body {
   margin: 0; padding: 0;
-  font-size: 24px;
+  font-size: clamp(1rem, 2vw, 2rem);
   font-family: "Merriweather", serif;
   z-index: $zNormal;
 
@@ -46,6 +46,7 @@ div#color-scheme-click-away {
 div#color-scheme-panel {
   /* UI for selecting color schemes */
   position: fixed; top: 0; right: 0; z-index: $zColorSchemePanel;
+  font-size: clamp(0.75rem, 2vw, 2rem);
   width: 9.25ex; height: 4.25ex;
   min-width: 9.25ex; min-height: 4.25ex;
   overflow: hidden; text-align: right;
@@ -58,8 +59,8 @@ div#color-scheme-panel {
 
 
 .color-scheme-selector-open div#color-scheme-panel {
-  width: 100%; height: 15.5ex;
-  min-width: 100%; min-height: 15.5ex;
+  width: 100%; height: clamp(20rex, 17vw, 40rex);
+  min-width: 100%; min-height: 15.5rex;
   border-radius: 0ex;
   -webkit-transition: .4s;
   transition: .4s;
@@ -137,6 +138,7 @@ button.color-scheme-button-collapse {
   margin-top: 5ex;
   overflow-x: auto; overflow-y: hidden; white-space: nowrap;
   vertical-align: bottom;
+  font-size: clamp(1rem, 2vw, 2rem);
 }
 
 .color-scheme-panel-selector label {
@@ -165,9 +167,9 @@ button.color-scheme-button-collapse {
 }
 
 body>header {
+  width: clamp(20em, 100vw, 45em);
   max-width: 45em;
-  margin: 0 auto;
-  padding: 1ex;
+  margin: 1ex auto;
   border-radius: 1ex;
   line-height: 1.5;
 }
@@ -182,10 +184,11 @@ body>header div#site-heading {
 }
 
 body>header div#site-heading h1 {
-    font-size: 1.5em;
-    margin: 0 1ex;
-    padding: 0;
-    font-style: italic;
+  font-size: clamp(1.5rem, 5vw, 4rem);
+  margin: 0 auto;
+  padding: 0;
+  font-style: italic;
+  width: 15em;
 }
 body>header div#site-heading p {
     text-align: right;
@@ -208,7 +211,7 @@ body>header nav {
 body>header nav a.github{
   float: right;
   position: relative;
-  top: 4ex;
+  top: 4ex; right: 2ex;
   text-decoration: none;
 }
 
@@ -234,7 +237,7 @@ body>header nav ul li:after{
 }
 
 body>main {
-  max-width: 45em;
+  width: clamp(19.5em, 95vw, 44em);
   margin: 0 auto; padding: 1ex;
   border-radius: 1ex;
   line-height: 1.5;
