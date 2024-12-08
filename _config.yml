@@ -1,8 +1,12 @@
 title: "@QuiteClose"
+description: "A Computer Programmer's Website"
 url: https://quiteclose.github.io
 baseurl: /
 permalink: /:categories/:year/:month/:day/:title/
+sass:
+  sourcemap: never
 exclude:
+  - _sass
   - .gitignore
   - .sass-cache
   - "*.css.map"
