@@ -1,22 +1,22 @@
-{% if include.class %}
+{%- if include.class %}
 <aside class="drawer {{ include.class }}">
-{% else %}
+{%- else %}
 <aside class="drawer">
-{% endif %}
+{%- endif %}
   <header>
-{% if include.open %}
+{%- if include.open %}
     <button class="drawer__open">{{ include.open }}</button>
-{% else %}
+{%- else %}
     <button class="drawer__open">V</button>
-{% endif %}
-{% if include.close %}
+{%- endif %}
+{%- if include.close %}
     <button class="drawer__close">{{ include.close }}</button>
-{% else %}
+{%- else %}
     <button class="drawer__close">X</button>
-{% endif %}
-{% if include.header %}
+{%- endif %}
+{%- if include.header %}
     {{ include.header }}
-{% endif %}
+{%- endif %}
   </header>
   <main>
     {{ include.content }}

@@ -1,0 +1,76 @@
+---
+layout: base
+stylesheets:
+  - default
+  - pattern-library
+browse:
+  - compositions
+  - blocks
+toggle:
+  - utilities
+  - exceptions
+---
+{%- include layouts/default/blocks/theme-control-drawer.html %}
+<div class="pattern-library">
+  <header>
+    <h1>Pattern Library</h1>
+    <nav>
+      <a href="{{ "/" | relative_url }}">Home</a>
+    </nav>
+  </header>
+  <section class="sidebar">
+    <nav class="flow">
+    {%- for layoutPatternMap in site.data.patterns %}
+      {%- assign layoutName = layoutPatternMap[0] %}
+      {%- assign layoutPatternSet = layoutPatternMap[1] %}
+      <section>
+        <h2>{{ layoutName|capitalize }}</h2>
+      {%- for collectionCategories in layoutPatternSet %}
+        {%- assign collection = collectionCategories[0] %}
+        {%- assign patterns = collectionCategories[1] %}
+        <h3>{{ collection|capitalize }}</h3>
+        <dl>
+        {%- for category in page.browse %}
+          <dt>{{ category|capitalize }}:</dt>
+          <dd>
+            <ul>
+          {%- for pattern in patterns[category] %}
+              <li><a href="#{{ collection|slugify }}-{{ category }}-{{ pattern }}">{{ pattern }}</a></li>
+          {%- endfor %}
+            </ul>
+          </dd>
+        {%- endfor %}
+        </dl>
+      {%- endfor %}
+      </section>
+    {%- endfor %}
+    </nav>
+    <section class="sidebar" data-direction="rtl">
+      <main>
+      {%- for layoutpatternmap in site.data.patterns %}
+        {%- assign layoutname = layoutpatternmap[0] %}
+        {%- assign layoutpatternset = layoutpatternmap[1] %}
+        {%- for collectioncategories in layoutpatternset %}
+          {%- assign collection = collectioncategories[0] %}
+          {%- assign patterns = collectioncategories[1] %}
+          {%- for category in page.browse %}
+            {%- for pattern in patterns[category] %}
+        <article id="{{ collection|slugify }}-{{ category }}-{{ pattern }}">
+          <div class="preview">
+            {% include {{ collection }}/{{ category }}/{{ pattern }}.html %}
+          </div>
+        </article>
+            {%- endfor %}
+          {%- endfor %}
+        {%- endfor %}
+      {%- endfor %}
+      </main>
+      <aside>
+      {{ pattern }} toggles
+      </aside>
+    </section>
+  </section>
+  <footer>
+    Footer
+  </footer>
+</div>

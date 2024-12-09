@@ -1,29 +1,22 @@
-<!DOCTYPE html>
-<html lang="en-GB"">
-  <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta charset="utf-8">
-    <link rel="stylesheet" href="{{ "/assets/styles/default.css" | relative_url }}">
-    {% if page.title %}
-    <title>{{ page.title }} - {{ site.title }}</title>
-    {% else %}
-    <title>{{ site.title }}</title>
-    {% endif %}
-  </head>
-  <body>
-    {% include drawer.html header='<input type="checkbox">' %}
-    <header>
-      <h1>{{ site.title }}</h1>
-      <p>{{ site.description }}</p>
-      <nav>
-        <ul>
-          <li><a href="{{ "/" | relative_url }}">Home</a></li>
-          <li><a href="{{ "/about" | relative_url }}">About</a></li>
-        </ul>
-      </nav>
-    </header>
-    <main>
-    {{ content }}
-    </main>
-  </body>
-</html>
+---
+layout: base
+stylesheets:
+  - default
+---
+{%- include layouts/default/blocks/theme-control-drawer.html %}
+<header>
+  <h1>{{ site.title }}</h1>
+  <p>{{ site.description }}</p>
+  <nav>
+    <ul>
+      <li><a href="{{ "/" | relative_url }}">Home</a></li>
+      <li><a href="{{ "/about" | relative_url }}">About</a></li>
+      {%- if jekyll.environment != "production" %}
+      <li><a href="{{ "/patterns" | relative_url }}">Patterns</a></li>
+      {%- endif %}
+    </ul>
+  </nav>
+</header>
+<main>
+{{ content }}
+</main>

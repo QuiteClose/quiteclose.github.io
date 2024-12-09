@@ -1,0 +1,13 @@
+default:
+  base:
+    variables:
+      - fluid-space
+      - size-step
+    compositions:
+      - flow
+      - sidebar
+    blocks:
+      - drawer
+  layouts/default:
+    blocks:
+      - theme-control-drawer

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en-GB"">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8">
+    {%- if page.stylesheets %}
+    {%- assign stylesheets = layout.stylesheets|concat: page.stylesheets %}
+    {%- else %}
+    {%- assign stylesheets = layout.stylesheets %}
+    {%- endif %}
+    {%- for stylesheet in stylesheets %}
+    <link rel="stylesheet" href="{{ "/assets/styles/"|append: stylesheet|append: ".css"| relative_url }}">
+    {%- endfor %}
+    {%- if page.title %}
+    <title>{{ page.title }} - {{ site.title }}</title>
+    {%- else %}
+    <title>{{ site.title }}</title>
+    {%- endif %}
+  </head>
+  {%- if page.classes %}
+  <body class="{{ page.classes|join: ' ' }}">
+  {%- else %}
+  <body>
+  {%- endif %}
+    {{ content }}
+  </body>
+</html>

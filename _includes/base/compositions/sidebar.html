@@ -1,0 +1,20 @@
+<div class="sidebar"{% if include.properties %} {{ include.properties }}{% endif %}>
+{%- if include.left %}
+  {{ include.left }}
+{%- else %}
+  <div class="flow" style="margin: 0.5ex; padding: 0.5ex; border: 0.5ex dashed #bbbbbb;"> 
+    <h2>left</h2>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut porttitor pharetra aliquam. Fusce eget volutpat ex. Cras porttitor porttitor efficitur. Morbi rutrum malesuada felis pulvinar convallis. Nullam sem lacus, ultricies vel viverra id, scelerisque id massa. Etiam posuere enim nulla, et accumsan libero fermentum eu. Nullam suscipit nibh ultricies, vulputate metus vitae, placerat mauris. Ut a libero commodo odio pharetra auctor nec ut dolor.</p>
+    <p>Nulla facilisi. Etiam consequat, arcu sed scelerisque interdum, leo risus condimentum elit, et vehicula augue mauris quis leo. Donec vitae maximus sapien. Curabitur augue dolor, imperdiet ut nibh id, euismod rutrum est. Donec consequat tortor non luctus gravida. Nunc porta nunc a libero dapibus, quis varius dolor pulvinar. Vivamus volutpat urna pulvinar pulvinar efficitur.</p>
+  </div>
+{%- endif %}
+{%- if include.right %}
+  {{ include.right }}
+{%- else %}
+  <div class="flow" style="margin: 0.5ex; padding: 0.5ex; border: 0.5ex dashed #bbbbbb;">
+    <h2>right</h2>
+    <p>Aliquam et tristique dolor. Integer at viverra risus. Duis vitae libero eget turpis rutrum eleifend. Fusce mollis tristique orci eget sollicitudin. Cras pretium arcu consectetur erat dignissim mollis. Suspendisse nec dolor ut velit efficitur tincidunt sed a odio. Proin libero tellus, faucibus interdum justo et, dapibus malesuada quam. Suspendisse efficitur lectus neque, et consectetur dolor laoreet vitae.</p>
+    <p>Pellentesque auctor est purus, in venenatis lacus ullamcorper ut. Mauris et massa mauris. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Mauris imperdiet nisi ut mollis cursus. Maecenas vulputate condimentum venenatis. Sed a consequat nisl, sit amet tempor nisi. Nunc et turpis pellentesque, ullamcorper neque nec, tristique eros.</p>
+  </div>
+{%- endif %}
+</div>
