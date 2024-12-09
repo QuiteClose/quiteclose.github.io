@@ -1,0 +1,57 @@
+---
+patterns:
+  - compositions
+  - blocks
+---
+<!DOCTYPE html>
+<html lang="en-GB"">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="{{ "/assets/styles/default.css" | relative_url }}">
+    <title>Component Library</title>
+    <style>
+body.pattern-library {
+  main {
+    section {
+      visibility: hidden;
+      width: 80vw;
+      height: 80vh;
+    }
+    section:target {
+      visibility: visible;
+    }
+  }
+}
+    </style>
+  </head>
+  <body class="pattern-library">
+    {% include blocks/drawer.html header='<input type="checkbox">' %}
+    <header>
+      <h1>Pattern Library</h1>
+      <nav>
+        {% for pattern in page.patterns %}
+        <dl>
+          <dt>{{ pattern|capitalize }}</dt>
+          <dd>
+            <ul>
+              {% for item in site.data.patterns[pattern] %}
+              <li><a href="#{{ pattern }}-{{ item }}">{{ item }}</a></li>
+              {% endfor %}
+            </ul>
+          </dd>
+        </dl>
+        {% endfor %}
+      </nav>
+    </header>
+    <main>
+    {% for pattern in page.patterns %}
+      {% for item in site.data.patterns[pattern] %}
+    <section id="{{ pattern }}-{{ item }}">
+      {% include {{pattern}}/{{ item }}.html %}
+    </section>
+      {% endfor %}
+    {% endfor %}
+    </main>
+  </body>
+</html>
