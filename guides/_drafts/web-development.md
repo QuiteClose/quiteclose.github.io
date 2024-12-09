@@ -2,7 +2,7 @@
 layout: post
 title: "Hitchhiker's Guide to Web Development"
 permalink: /guides/web-development/
-assets: /assets/guides/2024/web-development/
+assets: /assets/media/guides/2024/web-development/
 tags:
   - css
   - html

@@ -1,0 +1,40 @@
+---
+---
+.pattern-library {
+  z-index: -1;
+  background-color: #333333;
+  color: #aaaaaa;
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+  > header {
+    height: 4em;
+  }
+  section.sidebar {
+    padding: 0;
+    > * { max-height: calc(100vh - 8em); }
+    > nav {
+      min-height: calc(100vh - 8em);
+      overflow: auto; padding: 1ex;
+      ul { margin: 0; padding: 0; }
+    }
+    > main {
+      article {
+        display: none;
+        .preview {
+          max-height: calc(100vh - 8em);
+          overflow: auto;
+          background-color: #aaaaaa;
+          color: #333333;
+        }
+      }
+      article:target {
+        display: block;
+      }
+    }
+    aside {
+      padding: 1ex;
+    }
+  }
+  > footer {
+    height: 4em;
+  }
+}

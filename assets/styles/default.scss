@@ -1,3 +1,20 @@
 ---
 ---
-@import "default";
+{%- assign patterns = ""|split: "" %}
+{%- for collectionCategories in site.data.patterns.default %}
+  {%- assign collection = collectionCategories[0] %}
+  {%- assign categories = collectionCategories[1] %}
+  {%- for categoryItems in  categories %}
+    {%- assign category = categoryItems[0] %}
+    {%- assign items = categoryItems[1] %}
+    {%- for item in items %}
+      {%- assign patternPath = ''|append: collection|append: '/'|append: category|append: '/'|append: item|split: " " %}
+      {%- assign patterns = patterns|concat: patternPath %}
+    {%- endfor %}
+  {%- endfor %}
+{%- endfor %}
+@import "global";
+{%- for import_path in patterns %}
+/* Import: {{import_path}} */
+@import "{{import_path}}";
+{%- endfor %}

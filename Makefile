@@ -16,6 +16,7 @@ endef
 help:
 	@echo "Usage:"
 	@echo "  make asset        - Get a unique asset path"
+	@echo "  make build        - Build the site"
 	@echo "  make clean        - Remove build artifacts"
 	@echo "  make serve        - Serve the site"
 	@echo "  make shell        - Start a shell in the container"
@@ -31,6 +32,8 @@ asset:
 	mkdir -p "$(REPO_DIR)$$UNIQUE_PATH"; \
 	echo "Created $$UNIQUE_PATH";
 
+build:
+	$(call with_container,jekyll build --incremental --trace)
 
 clean:
 	@if [ -d "$(REPO_DIR)/_site" ]; then \
