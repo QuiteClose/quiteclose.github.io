@@ -1,0 +1,16 @@
+{
+  "name": "quiteclose.github.io",
+  "version": "1.0.0",
+  "description": "GitHub Pages for QuiteClose. The Makefile helps to run Jekyll in a container: *   Run `jekyll serve --livereload` in a container:     ```     make serve     ``` *   Run a shell in the container:     ```     make shell     ``` *   Remove artifacts:     ```     make clean     ```",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@11ty/eleventy": "^3.0.0"
+  }
+}
