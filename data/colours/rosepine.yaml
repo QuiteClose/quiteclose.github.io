@@ -1,0 +1,85 @@
+# Rosé Pine colour scheme
+
+light:
+  meta:
+    name: "Rosé Pine Dawn"
+    html: "Ros&eacute;&nbsp;Pine Dawn"
+  palette:
+    base:    '#faf4ed'
+    surface: '#fffaf3'
+    overlay: '#f2e9e1'
+    muted:   '#9893a5'
+    subtle:  '#797593'
+    text:    '#575279'
+    love:    '#b4637a'
+    gold:    '#ea9d34'
+    rose:    '#d7827e'
+    pine:    '#286983'
+    foam:    '#56949f'
+    iris:    '#907aa9'
+  styles:
+    text:
+      primary:   text
+      secondary: muted
+      emphasis:  text
+      heading:   rose
+      link:      pine
+      visited:   iris
+      hover:     foam
+    background:
+      primary:   base
+      secondary: surface
+      embed:     overlay
+  syntax:
+    keyword:     pine
+    string:      gold
+    comment:     muted
+    function:    rose
+    type:        foam
+    number:      pine
+    operator:    subtle
+    constant:    pine
+    variable:    rose
+    punctuation: subtle
+
+dark:
+  meta:
+    name: "Rosé Pine Moon"
+    html: "Ros&eacute;&nbsp;Pine Moon"
+  palette:
+    base:    '#232136'
+    surface: '#2a273f'
+    overlay: '#393552'
+    muted:   '#6e6a86'
+    subtle:  '#908caa'
+    text:    '#e0def4'
+    love:    '#eb6f92'
+    gold:    '#f6c177'
+    rose:    '#ea9a97'
+    pine:    '#3e8fb0'
+    foam:    '#9ccfd8'
+    iris:    '#c4a7e7'
+  styles:
+    text:
+      primary:   text
+      secondary: muted
+      emphasis:  text
+      heading:   rose
+      link:      pine
+      visited:   iris
+      hover:     foam
+    background:
+      primary:   base
+      secondary: surface
+      embed:     overlay
+  syntax:
+    keyword:     pine
+    string:      gold
+    comment:     muted
+    function:    rose
+    type:        foam
+    number:      pine
+    operator:    subtle
+    constant:    pine
+    variable:    rose
+    punctuation: subtle

@@ -1,0 +1,93 @@
+# GitHub colour scheme
+
+light:
+  meta:
+    name: GitHub Light
+    html: GitHub Light
+  palette:
+    near_black: '#1d1f21'
+    dark_gray:  '#24292e'
+    gray:       '#6a737d'
+    light_gray: '#8b949e'
+    silver:     '#c9d1d9'
+    mint:       '#f0fff4'
+    off_white:  '#f6f8fa'
+    white:      '#ffffff'
+    yellow:     '#735c0f'
+    orange:     '#e36209'
+    dark_red:   '#b31d28'
+    red:        '#d73a49'
+    purple:     '#6f42c1'
+    dark_blue:  '#032f62'
+    blue:       '#005cc5'
+    green:      '#22863a'
+  styles:
+    text:
+      primary:   dark_gray
+      secondary: light_gray
+      emphasis:  dark_gray
+      heading:   dark_gray
+      link:      dark_blue
+      visited:   purple
+      hover:     blue
+    background:
+      primary:   white
+      secondary: off_white
+      embed:     gray
+  syntax:
+    keyword:     red
+    string:      dark_blue
+    comment:     gray
+    function:    purple
+    type:        green
+    number:      blue
+    operator:    dark_gray
+    constant:    blue
+    variable:    orange
+    punctuation: gray
+
+dark:
+  meta:
+    name: GitHub Dark
+    html: GitHub Dark
+  palette:
+    near_black: '#1d1f21'
+    dark_gray:  '#24292e'
+    gray:       '#6a737d'
+    light_gray: '#8b949e'
+    silver:     '#c9d1d9'
+    mint:       '#f0fff4'
+    off_white:  '#f6f8fa'
+    white:      '#ffffff'
+    yellow:     '#f2cc60'
+    orange:     '#ffa657'
+    dark_red:   '#67060c'
+    red:        '#ff7b72'
+    purple:     '#d2a8ff'
+    dark_blue:  '#1f6feb'
+    blue:       '#79c0ff'
+    green:      '#7ee787'
+  styles:
+    text:
+      primary:   silver
+      secondary: light_gray
+      emphasis:  mint
+      heading:   off_white
+      link:      blue
+      visited:   purple
+      hover:     dark_blue
+    background:
+      primary:   near_black
+      secondary: dark_gray
+      embed:     off_white
+  syntax:
+    keyword:     red
+    string:      blue
+    comment:     light_gray
+    function:    purple
+    type:        green
+    number:      dark_blue
+    operator:    silver
+    constant:    dark_blue
+    variable:    orange
+    punctuation: light_gray

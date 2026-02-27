@@ -1,0 +1,77 @@
+# CRT colour scheme
+
+light:
+  meta:
+    name: Amber CRT
+    html: Amber CRT
+  palette:
+    bright:  '#ffbf00'
+    light:   '#e6aa00'
+    medium:  '#cc9600'
+    text:    '#b38200'
+    dim:     '#996e00'
+    faint:   '#805a00'
+    dark_bg: '#002200'
+    black:   '#001100'
+  styles:
+    text:
+      primary:   text
+      secondary: dim
+      emphasis:  medium
+      heading:   medium
+      link:      text
+      visited:   medium
+      hover:     faint
+    background:
+      primary:   black
+      secondary: dark_bg
+      embed:     faint
+  syntax:
+    keyword:     dim
+    string:      faint
+    comment:     dim
+    function:    text
+    type:        medium
+    number:      faint
+    operator:    text
+    constant:    faint
+    variable:    text
+    punctuation: dim
+
+dark:
+  meta:
+    name: Green CRT
+    html: Green CRT
+  palette:
+    bright:  '#00ff00'
+    light:   '#00dd00'
+    medium:  '#00bb00'
+    text:    '#009900'
+    dim:     '#007700'
+    faint:   '#005500'
+    dark_bg: '#002200'
+    black:   '#001100'
+  styles:
+    text:
+      primary:   text
+      secondary: dim
+      emphasis:  medium
+      heading:   dim
+      link:      text
+      visited:   medium
+      hover:     faint
+    background:
+      primary:   black
+      secondary: dark_bg
+      embed:     faint
+  syntax:
+    keyword:     dim
+    string:      faint
+    comment:     dim
+    function:    text
+    type:        medium
+    number:      faint
+    operator:    text
+    constant:    faint
+    variable:    text
+    punctuation: dim

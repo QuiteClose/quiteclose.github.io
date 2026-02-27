@@ -1,0 +1,8 @@
+---
+.title = "Semantica",
+.date = @date("2026-02-26T00:00:00"),
+.author = "QuiteClose",
+.layout = "semantica.shtml",
+.draft = false,
+---
+Semantica proof-of-concept. This page uses its own layout with a distinct colour scheme (CRT dark by default).

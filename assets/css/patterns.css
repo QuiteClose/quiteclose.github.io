@@ -1,0 +1,181 @@
+/*
+ * Pattern library chrome
+ *
+ * Shared UI styles for generated pattern library pages.
+ * Each layout's pattern library links this alongside the layout's own CSS.
+ *
+ * Custom properties (configurable):
+ *   --patterns-sidebar-width: 16rem (sidebar target width)
+ *   --patterns-swatch-size: 2.5rem (colour swatch dimensions)
+ *   --patterns-bar-color: currentColor (spacing bar fill)
+ */
+
+.patterns {
+  --patterns-sidebar-width: 16rem;
+  --patterns-swatch-size: 2.5rem;
+  --patterns-bar-color: currentColor;
+}
+
+.patterns__header {
+  padding: var(--space-s, 1rem) var(--space-m, 1.5rem);
+  border-bottom: var(--stroke, 1px solid currentColor);
+  font-weight: bold;
+}
+
+.patterns__body {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.patterns__nav {
+  flex-basis: var(--patterns-sidebar-width);
+  flex-grow: 1;
+  padding: var(--space-m, 1.5rem);
+  border-bottom: var(--stroke, 1px solid currentColor);
+}
+
+.patterns__content {
+  flex-basis: 0;
+  flex-grow: 999;
+  min-inline-size: 65%;
+  padding: var(--space-m, 1.5rem);
+}
+
+@media (min-width: 40em) {
+  .patterns__nav {
+    border-bottom: 0;
+    border-right: var(--stroke, 1px solid currentColor);
+  }
+}
+
+.patterns__nav h2 {
+  font-size: var(--size-step-1, 1.25rem);
+  margin-block-start: var(--space-m, 1.5rem);
+}
+
+.patterns__nav h2:first-child {
+  margin-block-start: 0;
+}
+
+.patterns__nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  margin-block-start: var(--space-2xs, 0.5rem);
+}
+
+.patterns__nav li + li {
+  margin-block-start: 0.35em;
+}
+
+.patterns__nav a {
+  font-size: var(--size-step-0, 1rem);
+}
+
+.patterns__nav a:not([aria-current]):not(:hover) {
+  text-decoration: none;
+}
+
+.patterns__nav [aria-current='page'] {
+  font-weight: bold;
+}
+
+/* Colour swatches */
+
+.patterns__swatches {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.patterns__swatches th {
+  text-align: left;
+  padding: var(--space-3xs, 0.25rem) var(--space-2xs, 0.5rem);
+  border-bottom: var(--stroke, 1px solid currentColor);
+  font-size: var(--size-step--1, 0.875rem);
+}
+
+.patterns__swatches td {
+  padding: var(--space-3xs, 0.25rem) var(--space-2xs, 0.5rem);
+  border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+  vertical-align: middle;
+  font-size: var(--size-step--1, 0.875rem);
+}
+
+.patterns__swatch {
+  display: inline-block;
+  width: var(--patterns-swatch-size);
+  aspect-ratio: 1;
+  border: 1px solid rgba(128, 128, 128, 0.4);
+  border-radius: 0.2rem;
+  vertical-align: middle;
+}
+
+/* Token tables (typography, spacing) */
+
+.patterns__tokens {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.patterns__tokens th {
+  text-align: left;
+  padding: var(--space-3xs, 0.25rem) var(--space-2xs, 0.5rem);
+  border-bottom: var(--stroke, 1px solid currentColor);
+  font-size: var(--size-step--1, 0.875rem);
+}
+
+.patterns__tokens td {
+  padding: var(--space-3xs, 0.25rem) var(--space-2xs, 0.5rem);
+  border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+  vertical-align: middle;
+}
+
+.patterns__tokens code {
+  font-size: var(--size-step--1, 0.875rem);
+}
+
+/* Typography samples */
+
+.patterns__type-sample {
+  margin-block: var(--space-s, 1rem);
+  padding: var(--space-xs, 0.75rem);
+  border: 1px solid rgba(128, 128, 128, 0.2);
+  border-radius: 0.2rem;
+}
+
+/* Spacing bars */
+
+.patterns__spacing-bar {
+  display: inline-block;
+  min-height: var(--patterns-bar-height, 1rem);
+  width: 100%;
+  max-width: 40rem;
+  background: var(--patterns-bar-color);
+  opacity: 0.7;
+  border-radius: 0.15rem;
+}
+
+/* Section headings within pattern pages */
+
+.patterns__section-heading {
+  margin-block-start: var(--space-l, 2rem);
+  padding-block-end: var(--space-3xs, 0.25rem);
+  border-bottom: var(--stroke, 1px solid currentColor);
+}
+
+/* CSS file listings */
+
+.patterns__file-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.patterns__file-list li {
+  padding: var(--space-3xs, 0.25rem) 0;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+}
+
+.patterns__file-list code {
+  font-size: var(--size-step--1, 0.875rem);
+}

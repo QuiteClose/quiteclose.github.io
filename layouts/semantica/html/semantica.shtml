@@ -1,0 +1,10 @@
+<extend template="base.shtml">
+<head id="head">
+	<link rel="stylesheet" href="$build.asset('semantica.css').link()">
+</head>
+<body id="body">
+	<main>
+		<h1 :text="$page.title"></h1>
+		<div :html="$page.content()"></div>
+	</main>
+</body>

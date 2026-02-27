@@ -1,0 +1,8 @@
+<extend template="base.shtml">
+<head id="head">
+	<link rel="stylesheet" href="$build.asset('default.css').link()">
+</head>
+<body id="body">
+	<h1 :text="$page.title"></h1>
+	<div :html="$page.content()"></div>
+</body>
