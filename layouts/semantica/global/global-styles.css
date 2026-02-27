@@ -1,0 +1,9 @@
+/* Semantica layout: global element styles -- visually distinct from default */
+body {
+  font-family: 'Courier New', monospace;
+  line-height: 1.4;
+  color: var(--color-text-primary, #00ff00);
+  background: var(--color-bg-primary, #001100);
+  margin: 0;
+  overflow: hidden;
+}

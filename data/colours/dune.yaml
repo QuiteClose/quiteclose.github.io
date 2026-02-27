@@ -1,0 +1,93 @@
+# Dune (Atelier Dune) colour scheme
+
+light:
+  meta:
+    name: Dune Light
+    html: Dune Light
+  palette:
+    bg0:     '#fefbec'
+    bg1:     '#e8e4cf'
+    bg2:     '#a6a28c'
+    bg3:     '#999580'
+    fg3:     '#7d7a68'
+    fg2:     '#6e6b5e'
+    fg1:     '#292824'
+    fg0:     '#20201d'
+    red:     '#d73737'
+    orange:  '#b65611'
+    yellow:  '#ae9513'
+    green:   '#60ac39'
+    cyan:    '#1fad83'
+    blue:    '#6684e1'
+    purple:  '#b854d4'
+    magenta: '#d43552'
+  styles:
+    text:
+      primary:   fg3
+      secondary: bg2
+      emphasis:  fg2
+      heading:   orange
+      link:      blue
+      visited:   purple
+      hover:     cyan
+    background:
+      primary:   bg0
+      secondary: bg1
+      embed:     fg1
+  syntax:
+    keyword:     purple
+    string:      green
+    comment:     bg2
+    function:    blue
+    type:        yellow
+    number:      orange
+    operator:    fg3
+    constant:    orange
+    variable:    fg3
+    punctuation: fg3
+
+dark:
+  meta:
+    name: Dune
+    html: Dune
+  palette:
+    bg0:     '#20201d'
+    bg1:     '#292824'
+    bg2:     '#6e6b5e'
+    bg3:     '#7d7a68'
+    fg3:     '#999580'
+    fg2:     '#a6a28c'
+    fg1:     '#e8e4cf'
+    fg0:     '#fefbec'
+    red:     '#d73737'
+    orange:  '#b65611'
+    yellow:  '#ae9513'
+    green:   '#60ac39'
+    cyan:    '#1fad83'
+    blue:    '#6684e1'
+    purple:  '#b854d4'
+    magenta: '#d43552'
+  styles:
+    text:
+      primary:   fg3
+      secondary: bg2
+      emphasis:  fg2
+      heading:   orange
+      link:      blue
+      visited:   purple
+      hover:     cyan
+    background:
+      primary:   bg0
+      secondary: bg1
+      embed:     fg1
+  syntax:
+    keyword:     purple
+    string:      green
+    comment:     bg2
+    function:    blue
+    type:        yellow
+    number:      orange
+    operator:    fg3
+    constant:    orange
+    variable:    fg3
+    punctuation: fg3

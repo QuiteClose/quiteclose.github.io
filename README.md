@@ -1,14 +1,19 @@
 # quiteclose.github.io
-GitHub Pages for QuiteClose. The Makefile helps to run Jekyll in a container:
-*   Run `jekyll serve --livereload` in a container:
-    ```
-    make serve
-    ```
-*   Run a shell in the container:
-    ```
-    make shell
-    ```
-*   Remove artifacts:
-    ```
-    make clean
-    ```
+
+Personal website built with [Zine](https://zine-ssg.io/), a Zig-based static site generator.
+
+## Development
+
+Start the dev server (live reload):
+
+```
+zine
+```
+
+Build for production:
+
+```
+zine release
+```
+
+Output goes to `public/`.

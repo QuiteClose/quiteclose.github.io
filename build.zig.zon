@@ -1,0 +1,20 @@
+.{
+    .name = .quiteclose,
+    .version = "0.0.0",
+    .fingerprint = 0x1aaca7d2af19e488,
+    .minimum_zig_version = "0.15.0",
+    .dependencies = .{
+        .zine = .{
+            .path = "../zine",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "layouts",
+        "pages",
+        "assets",
+        "data",
+    },
+}

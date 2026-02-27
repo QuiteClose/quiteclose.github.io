@@ -1,0 +1,93 @@
+# Srcery colour scheme
+
+light:
+  meta:
+    name: Srcery Light
+    html: Srcery Light
+  palette:
+    black:        '#1c1b19'
+    dark_gray:    '#504945'
+    medium_gray:  '#665c54'
+    bright_black: '#918175'
+    warm_gray:    '#bdae93'
+    light_gray:   '#d5c4a1'
+    cream:        '#ebdbb2'
+    bright_white: '#fce8c3'
+    yellow:       '#fbb829'
+    orange:       '#d97147'
+    red:          '#ef2f27'
+    magenta:      '#ff5c8f'
+    purple:       '#8959a8'
+    blue:         '#4888d4'
+    cyan:         '#0aaeb3'
+    green:        '#98bc37'
+  styles:
+    text:
+      primary:   medium_gray
+      secondary: bright_black
+      emphasis:  medium_gray
+      heading:   orange
+      link:      blue
+      visited:   purple
+      hover:     cyan
+    background:
+      primary:   bright_white
+      secondary: light_gray
+      embed:     medium_gray
+  syntax:
+    keyword:     red
+    string:      green
+    comment:     bright_black
+    function:    yellow
+    type:        blue
+    number:      magenta
+    operator:    medium_gray
+    constant:    magenta
+    variable:    cyan
+    punctuation: bright_black
+
+dark:
+  meta:
+    name: Srcery
+    html: Srcery
+  palette:
+    black:        '#1c1b19'
+    dark_gray:    '#504945'
+    medium_gray:  '#665c54'
+    bright_black: '#918175'
+    warm_gray:    '#bdae93'
+    light_gray:   '#d5c4a1'
+    cream:        '#ebdbb2'
+    bright_white: '#fce8c3'
+    yellow:       '#fbb829'
+    orange:       '#f99157'
+    red:          '#ef2f27'
+    magenta:      '#ff5c8f'
+    purple:       '#8959a8'
+    blue:         '#68a8e4'
+    cyan:         '#0aaeb3'
+    green:        '#98bc37'
+  styles:
+    text:
+      primary:   warm_gray
+      secondary: bright_black
+      emphasis:  light_gray
+      heading:   orange
+      link:      blue
+      visited:   purple
+      hover:     cyan
+    background:
+      primary:   black
+      secondary: dark_gray
+      embed:     medium_gray
+  syntax:
+    keyword:     red
+    string:      green
+    comment:     bright_black
+    function:    yellow
+    type:        blue
+    number:      magenta
+    operator:    warm_gray
+    constant:    magenta
+    variable:    cyan
+    punctuation: bright_black

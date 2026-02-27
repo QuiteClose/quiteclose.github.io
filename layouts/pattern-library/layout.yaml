@@ -1,0 +1,55 @@
+# Pattern library layout: browse patterns for each layout
+
+name: Pattern Library
+
+tokens:
+  viewport:
+    min: 320
+    max: 1240
+  typography:
+    base:
+      min: 18
+      max: 20
+    scale:
+      min: 1.2
+      max: 1.25
+    steps:
+      above: 5
+      below: 2
+  spacing:
+    negative: [0.75, 0.5, 0.25]
+    positive: [1.5, 2, 3, 4, 6]
+    pairs: [s-l]
+
+css:
+  - _core/reset.css
+  - _core/syntax.css
+  - _core/compositions/*
+  - _core/utilities/*
+  - pattern-library/blocks/*
+
+highlights:
+  default:
+    scheme: solarized
+    mode: dark
+  schemes:
+    - borland.light
+    - borland.dark
+    - tomorrow.light
+    - tomorrow.dark
+    - rosepine.light
+    - rosepine.dark
+    - github.light
+    - github.dark
+    - dune.light
+    - dune.dark
+    - solarized.light
+    - solarized.dark
+    - srcery.light
+    - srcery.dark
+    - gruvbox.light
+    - gruvbox.dark
+    - crt.light
+    - crt.dark
+  css: true
+  js: true
