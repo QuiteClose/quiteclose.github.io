@@ -1,0 +1,51 @@
+---
+title: Home
+date: 2026-02-24
+author: QuiteClose
+layout: page.html
+draft: false
+---
+<p>This site is under construction.</p>
+
+<h2>Build-time syntax highlighting (Zine / Tree Sitter)</h2>
+
+<pre><code class="language-python">def add_numbers(num1, num2):
+    """
+    Adds two numbers and returns the sum.
+    """
+    sum = num1 + num2
+    return sum
+
+# Call the function and store the result in a variable
+result = add_numbers(5, 4)
+print("Sum:", result)</code></pre>
+
+<h2>Run-time syntax highlighting (LDT)</h2>
+
+<textarea id="ldt-demo" rows="12" cols="60">def add_numbers(num1, num2):
+    """
+    Adds two numbers and returns the sum.
+    """
+    sum = num1 + num2
+    return sum
+
+# Call the function and store the result in a variable
+result = add_numbers(5, 4)
+print("Sum:", result)</textarea>
+<script>
+var pythonParser = new Parser({
+    whitespace: /\s+/,
+    comment:    /#+[^\r\n]*/,
+    string:     /"""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\r\n])*"|'(?:\\.|[^'\r\n])*'/,
+    keyword:    /\b(?:False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)\b/,
+    type:       /\b(?:int|float|str|bool|list|dict|tuple|set|bytes|bytearray|memoryview|range|frozenset|complex|object|type)\b/,
+    constant:   /\b(?:True|False|None)\b/,
+    function:   /\b[A-Za-z_]\w*(?=\s*\()/,
+    number:     /0[xXoObB][\dA-Fa-f_]+|\d[\d_]*(?:\.[\d_]+)?(?:[eE][+-]?\d+)?/,
+    operator:   /[+\-*\/%=<>!&|^~@]+|:(?!=)/,
+    punctuation: /[()[\]{},;:.]/,
+    variable:   /\b[A-Za-z_]\w*\b/,
+    other:      /\S/
+});
+new TextareaDecorator(document.getElementById("ldt-demo"), pythonParser);
+</script>
