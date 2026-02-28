@@ -16,7 +16,7 @@ This directory contains the custom static site generator for quiteclose.github.i
 zig build          # Release build → zig-out/site/
 zig build draft    # Dev build (pattern library + drafts) → zig-out/site/
 zig build serve    # Dev build then python3 HTTP server on :8080
-zig build test     # Run template engine tests (49 tests)
+zig build test     # Run template engine tests (72 tests)
 ```
 
 ## How a page is rendered
@@ -152,9 +152,9 @@ Accesses attributes passed to the current include.
 - Only meaningful inside an included template
 - If the attribute doesn't exist, element form renders nothing; attribute form omits the attribute
 
-### `<x-if>` / `<x-elif>` / `<x-else>` -- conditional rendering
+### `<x-if>` / `<x-elif />` / `<x-else />` -- conditional rendering
 
-Conditionally renders content based on variable, attribute, or slot existence/values.
+Conditionally renders content based on variable, attribute, or slot existence/values. `<x-elif />` and `<x-else />` are **self-closing separators** inside a single `<x-if>...</x-if>` block.
 
 ```html
 <!-- Variable exists -->
@@ -162,12 +162,12 @@ Conditionally renders content based on variable, attribute, or slot existence/va
 <p class="subtitle"><x-var name="page.subtitle" /></p>
 </x-if>
 
-<!-- Variable equals a value -->
+<!-- Variable equals a value, with elif and else branches -->
 <x-if var="site.mode" equals="development">
 <p>Development mode</p>
-<x-elif var="site.mode" equals="staging">
+<x-elif var="site.mode" equals="staging" />
 <p>Staging mode</p>
-<x-else>
+<x-else />
 <p>Production</p>
 </x-if>
 
@@ -186,6 +186,8 @@ Conditionally renders content based on variable, attribute, or slot existence/va
 <p>Published</p>
 </x-if>
 ```
+
+**Separator syntax:** Only `<x-if>` has a closing tag (`</x-if>`). `<x-elif />` and `<x-else />` are self-closing separators that divide the body of the enclosing `<x-if>` into branches. There are no `</x-elif>` or `</x-else>` close tags. Nesting is handled by matching `<x-if>`/`</x-if>` pairs.
 
 **Scopes:** `var`, `attr`, `slot` -- exactly one required per condition.
 
@@ -276,5 +278,8 @@ All template elements are tested via inline `test` blocks in `template.zig`. Run
 - `x-include`/`x-attr`: simple, with body, with attrs, combined, attribute context, nested, circular detection, scope isolation (8 tests)
 - `x-if`/`x-elif`/`x-else`: var exists true/false, equals, not-equals, not-exists, else, elif chain, attr scope, slot scope (9 tests)
 - `x-for`: data list, pages, sorted asc/desc, draft exclusion, nested with shadowing (6 tests)
+- Nesting: nested if inner false with else, outer false, with elif, elif with inner chain, else with inner chain, nested if in for, complex if-for-if (7 tests)
 - Indentation: simple, multi-line, nested structure, include body, named slots at different levels, zero-level slot, empty content (7 tests)
 - Integration: full page render through 3-level extend chain with includes, variables, loops, and conditionals (1 test)
+- Malformed/error: extend missing template, include missing template, orphan else, orphan elif, unclosed if/for/slot, var no name, raw no name, for no in, unfilled slot renders default, unfilled slot self-closing empty, extend no template attr, include no template attr (14 tests)
+- **Total: 72 tests** (verified by `zig build test`, all passing, zero memory leaks)
