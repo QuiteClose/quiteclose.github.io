@@ -130,6 +130,7 @@ fn renderTemplate(a: Allocator, input: []const u8, ctx: *const Context, resolver
         .vars = ctx.vars,
         .attrs = ctx.attrs,
         .slots = slots,
+        .collections = ctx.collections,
         .dev_mode = ctx.dev_mode,
     };
 
@@ -291,6 +292,7 @@ fn renderInclude(a: Allocator, input: []const u8, start: usize, ctx: *const Cont
         .vars = ctx.vars,
         .attrs = inc_attrs,
         .slots = child_slots,
+        .collections = ctx.collections,
         .dev_mode = ctx.dev_mode,
     };
 
@@ -1449,4 +1451,92 @@ test "for_nested_shadow" {
     defer a.free(result);
 
     try testing.expectEqualStrings("A1,A2,B1,B2,", result);
+}
+
+// ---------------------------------------------------------------------------
+// Integration test: full page render
+// ---------------------------------------------------------------------------
+
+test "integration_full_page" {
+    const a = testing.allocator;
+
+    // base.html: outer shell with slots for title, head, and content
+    const base_tmpl =
+        \\<!DOCTYPE html>
+        \\<html lang="en">
+        \\<head>
+        \\<meta charset="utf-8" />
+        \\<title><x-slot name="title">Untitled</x-slot></title>
+        \\<x-slot name="head" />
+        \\</head>
+        \\<body>
+        \\<x-slot name="content" />
+        \\</body>
+        \\</html>
+    ;
+
+    // page.html: extends base, fills content with nav + main slot
+    const page_tmpl =
+        \\<x-extend template="base.html">
+        \\<x-define slot="content">
+        \\<x-include template="nav.html" class="site-nav" />
+        \\<main><x-slot name="main">No content.</x-slot></main>
+        \\<footer>&copy; <x-var name="site.author" /></footer>
+        \\</x-define>
+    ;
+
+    // nav.html: component that renders links from a data collection
+    const nav_tmpl =
+        \\<nav x-attr:class="class"><ul>
+        \\<x-for link in data.nav><li><a x-var:href="link.url"><x-var name="link.label" /></a></li></x-for>
+        \\</ul></nav>
+    ;
+
+    // content page: extends page.html, fills title and main
+    const content_page =
+        \\<x-extend template="page.html">
+        \\<x-define slot="title"><x-var name="page.title" /></x-define>
+        \\<x-define slot="head"><link rel="stylesheet" href="/css/default.css" /></x-define>
+        \\<x-define slot="main">
+        \\<h1><x-var name="page.title" /></h1>
+        \\<x-if var="page.subtitle"><p class="subtitle"><x-var name="page.subtitle" /></p></x-if>
+        \\<x-for post in pages.posts><article><h2><a x-var:href="post.x-path"><x-var name="post.title" /></a></h2></article></x-for>
+        \\</x-define>
+    ;
+
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    try resolver.put(a, "base.html", base_tmpl);
+    try resolver.put(a, "page.html", page_tmpl);
+    try resolver.put(a, "nav.html", nav_tmpl);
+
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "site.author", "QuiteClose");
+    try ctx.putVar(a, "page.title", "Welcome");
+
+    // nav data
+    var nav_entries: [2]Entry = .{ .{}, .{} };
+    try nav_entries[0].values.put(a, "label", "Home");
+    try nav_entries[0].values.put(a, "url", "/");
+    try nav_entries[1].values.put(a, "label", "About");
+    try nav_entries[1].values.put(a, "url", "/about/");
+    defer for (&nav_entries) |*e| e.values.deinit(a);
+    try ctx.putCollection(a, "data.nav", nav_entries[0..]);
+
+    // posts collection
+    var post_entries: [2]Entry = .{ .{}, .{} };
+    try post_entries[0].values.put(a, "title", "First Post");
+    try post_entries[0].values.put(a, "x-path", "/posts/first/");
+    try post_entries[1].values.put(a, "title", "Second Post");
+    try post_entries[1].values.put(a, "x-path", "/posts/second/");
+    defer for (&post_entries) |*e| e.values.deinit(a);
+    try ctx.putCollection(a, "pages.posts", post_entries[0..]);
+
+    const result = try render(a, content_page, &ctx, &resolver);
+    defer a.free(result);
+
+    const expected = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\" />\n<title>Welcome</title>\n<link rel=\"stylesheet\" href=\"/css/default.css\" />\n</head>\n<body>\n\n<nav class=\"site-nav\"><ul>\n<li><a href=\"/\">Home</a></li><li><a href=\"/about/\">About</a></li>\n</ul></nav>\n<main>\n<h1>Welcome</h1>\n\n<article><h2><a href=\"/posts/first/\">First Post</a></h2></article><article><h2><a href=\"/posts/second/\">Second Post</a></h2></article>\n</main>\n<footer>&copy; QuiteClose</footer>\n\n</body>\n</html>";
+
+    try testing.expectEqualStrings(expected, result);
 }

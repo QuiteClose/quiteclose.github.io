@@ -1,5 +1,4 @@
 const std = @import("std");
-const zine = @import("zine");
 
 const layouts = [_][]const u8{ "default", "pattern-library", "semantica" };
 
@@ -12,94 +11,50 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
-    // Release pipeline: no pattern library, no drafts
-    const rel = addPipeline(b, gen, false);
-    const release_opts: zine.Options = .{
-        .website_root = rel.staging,
-        .output_path = "zine-release",
-        .force = true,
-        .build_assets = rel.assets[0..rel.count],
-    };
-    const release = zine.website(b, release_opts);
+    const template_tests = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/template.zig"),
+            .target = b.graph.host,
+        }),
+    });
+
+    const test_step = b.step("test", "Run template engine tests");
+    test_step.dependOn(&b.addRunArtifact(template_tests).step);
+
+    // zig build -- release build (no pattern library, no drafts)
+    const release_site = addGenerateStep(b, gen, false);
     const install = b.getInstallStep();
-    install.dependOn(&release.step);
     install.dependOn(&b.addInstallDirectory(.{
-        .source_dir = rel.staging,
+        .source_dir = release_site,
         .install_dir = .prefix,
-        .install_subdir = "zine-in",
+        .install_subdir = "site",
     }).step);
 
-    // Dev pipeline: pattern library included, drafts enabled
-    const dev = addPipeline(b, gen, true);
-    const dev_opts: zine.Options = .{
-        .website_root = dev.staging,
-        .output_path = "zine-draft",
-        .force = true,
-        .build_assets = dev.assets[0..dev.count],
-    };
-
-    // zig build draft
-    const draft_release = zine.website(b, dev_opts);
-    draft_release.addArg("--drafts");
+    // zig build draft -- includes pattern library and draft pages
+    const draft_site = addGenerateStep(b, gen, true);
     const draft_step = b.step("draft", "Build with pattern library and draft pages");
-    draft_step.dependOn(&draft_release.step);
     draft_step.dependOn(&b.addInstallDirectory(.{
-        .source_dir = dev.staging,
+        .source_dir = draft_site,
         .install_dir = .prefix,
-        .install_subdir = "zine-in",
+        .install_subdir = "site",
     }).step);
 
-    // zig build serve
-    const dev_serve = zine.serve(b, dev_opts);
-    dev_serve.addArg("--drafts");
-    const serve_step = b.step("serve", "Start dev server with pattern library and drafts");
-    serve_step.dependOn(&dev_serve.step);
+    // zig build serve -- draft build then serve with python3
+    const serve_cmd = b.addSystemCommand(&.{ "python3", "-m", "http.server", "8080", "-d" });
+    serve_cmd.addDirectoryArg(draft_site);
+    const serve_step = b.step("serve", "Build draft and start dev server");
+    serve_step.dependOn(&serve_cmd.step);
 }
 
-const Pipeline = struct {
-    staging: std.Build.LazyPath,
-    assets: [layouts.len * 2]zine.BuildAsset,
-    count: usize,
-};
-
-fn addPipeline(b: *std.Build, gen: *std.Build.Step.Compile, dev: bool) Pipeline {
+fn addGenerateStep(b: *std.Build, gen: *std.Build.Step.Compile, dev: bool) std.Build.LazyPath {
     const run = b.addRunArtifact(gen);
 
     run.addDirectoryArg(b.path("layouts"));
     run.addDirectoryArg(b.path("data"));
     run.addDirectoryArg(b.path("pages"));
     run.addDirectoryArg(b.path("assets"));
-    run.addFileArg(b.path("data/site.yaml"));
+    const site_dir = run.addOutputDirectoryArg("site");
 
-    const staging = run.addOutputDirectoryArg("zine-in");
-
-    var result: Pipeline = .{
-        .staging = staging,
-        .assets = undefined,
-        .count = 0,
-    };
-
-    for (&layouts) |layout_name| {
-        const css_file = b.fmt("{s}.css", .{layout_name});
-        const css_output = run.addOutputFileArg(css_file);
-        result.assets[result.count] = .{
-            .name = css_file,
-            .lp = css_output,
-            .install_path = css_file,
-        };
-        result.count += 1;
-
-        const js_file = b.fmt("{s}.js", .{layout_name});
-        const js_output = run.addOutputFileArg(js_file);
-        result.assets[result.count] = .{
-            .name = js_file,
-            .lp = js_output,
-            .install_path = js_file,
-        };
-        result.count += 1;
-    }
-
-    // Comma-separated layout names
     var all_len: usize = 0;
     for (&layouts, 0..) |lname, i| {
         if (i > 0) all_len += 1;
@@ -119,5 +74,5 @@ fn addPipeline(b: *std.Build, gen: *std.Build.Step.Compile, dev: bool) Pipeline 
 
     if (dev) run.addArg("--dev");
 
-    return result;
+    return site_dir;
 }
