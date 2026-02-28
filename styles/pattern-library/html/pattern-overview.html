@@ -1,0 +1,27 @@
+<x-extend template="pattern-library.html">
+<x-define slot="layout-css">
+<link rel="stylesheet" x-var:href="page.layout_css" />
+<link rel="stylesheet" href="/css/patterns.css" />
+</x-define>
+<x-define slot="content">
+<p>Pattern library for the <strong><x-var name="page.layout_display_name" /></strong> layout.</p>
+<x-if var="page.has_tokens">
+<h2>Token Configuration</h2>
+<ul>
+<li><strong>Viewport:</strong> <x-var name="page.viewport_min" />px &ndash; <x-var name="page.viewport_max" />px</li>
+</ul>
+</x-if>
+<x-if var="page.has_highlights">
+<h2>Colour Schemes</h2>
+<p>Default: <strong><x-var name="page.default_scheme" /></strong> (<x-var name="page.default_mode" />)</p>
+</x-if>
+<x-if var="page.has_css">
+<h2>CSS Files</h2>
+<ul>
+<x-for file in overview.css_files>
+<li><code><x-var name="file.path" /></code></li>
+</x-for>
+</ul>
+</x-if>
+</x-define>
+</x-extend>

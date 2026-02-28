@@ -4,7 +4,7 @@ const template = @import("template.zig");
 const Allocator = std.mem.Allocator;
 const Dir = std.fs.Dir;
 
-/// Usage: generate <layouts_dir> <data_dir> <pages_dir> <assets_dir>
+/// Usage: generate <styles_dir> <data_dir> <pages_dir> <assets_dir>
 ///        <output_dir> <layout_names> [--dev]
 ///
 /// Generates a complete static site: CSS bundles, rendered HTML pages,
@@ -21,7 +21,7 @@ pub fn main() !void {
     var args = std.process.args();
     _ = args.skip();
 
-    const layouts_dir_path = args.next() orelse fatal("missing layouts_dir argument");
+    const styles_dir_path = args.next() orelse fatal("missing styles_dir argument");
     const data_dir_path = args.next() orelse fatal("missing data_dir argument");
     const pages_dir_path = args.next() orelse fatal("missing pages_dir argument");
     const assets_dir_path = args.next() orelse fatal("missing assets_dir argument");
@@ -29,17 +29,17 @@ pub fn main() !void {
     const all_layouts = args.next() orelse fatal("missing layout_names argument");
     const dev = if (args.next()) |flag| std.mem.eql(u8, flag, "--dev") else false;
 
-    const layouts_dir = std.fs.cwd().openDir(layouts_dir_path, .{ .iterate = true }) catch |err|
-        fatalFmt("cannot open layouts dir '{s}': {}", .{ layouts_dir_path, err });
+    const styles_dir = std.fs.cwd().openDir(styles_dir_path, .{ .iterate = true }) catch |err|
+        fatalFmt("cannot open styles dir '{s}': {}", .{ styles_dir_path, err });
     const data_dir = std.fs.cwd().openDir(data_dir_path, .{}) catch |err|
         fatalFmt("cannot open data dir '{s}': {}", .{ data_dir_path, err });
 
-    processAll(a, layouts_dir, data_dir, pages_dir_path, assets_dir_path, output_dir_path, all_layouts, dev);
+    processAll(a, styles_dir, data_dir, pages_dir_path, assets_dir_path, output_dir_path, all_layouts, dev);
 }
 
 fn processAll(
     a: Allocator,
-    layouts_dir: Dir,
+    styles_dir: Dir,
     data_dir: Dir,
     pages_dir_path: []const u8,
     assets_dir_path: []const u8,
@@ -63,13 +63,13 @@ fn processAll(
     for (layout_names[0..layout_count]) |layout_name| {
         const css_path = std.fmt.allocPrint(a, "{s}/css/{s}.css", .{ output_dir_path, layout_name }) catch @panic("OOM");
         const js_path = std.fmt.allocPrint(a, "{s}/js/{s}.js", .{ output_dir_path, layout_name }) catch @panic("OOM");
-        processLayout(a, layouts_dir, data_dir, layout_name, css_path, js_path) catch |err|
+        processLayout(a, styles_dir, data_dir, layout_name, css_path, js_path) catch |err|
             fatalFmt("error processing layout '{s}': {}", .{ layout_name, err });
     }
 
     // 2. Load templates into resolver
     var resolver: template.Resolver = .{};
-    loadTemplates(a, layouts_dir, layout_names[0..layout_count], &resolver) catch |err|
+    loadTemplates(a, styles_dir, layout_names[0..layout_count], &resolver) catch |err|
         fatalFmt("error loading templates: {}", .{err});
 
     // 3. Load site-level variables
@@ -90,7 +90,7 @@ fn processAll(
     {
         var missing_count: usize = 0;
         for (layout_names[0..layout_count]) |layout_name| {
-            missing_count += validatePatternExamples(a, layouts_dir, layout_name);
+            missing_count += validatePatternExamples(a, styles_dir, layout_name);
         }
         if (missing_count > 0) {
             fatalFmt("{d} pattern(s) missing example files -- see warnings above", .{missing_count});
@@ -100,20 +100,21 @@ fn processAll(
     // 7. Pattern library (dev mode only)
     if (dev) {
         for (layout_names[0..layout_count]) |layout_name| {
-            generatePatternLibrary(a, layouts_dir, data_dir, layout_name, output_dir_path, site_conf, &resolver) catch |err|
+            generatePatternLibrary(a, styles_dir, data_dir, layout_name, output_dir_path, site_conf, &resolver) catch |err|
                 fatalFmt("error generating pattern library for '{s}': {}", .{ layout_name, err });
         }
+        generatePatternIndex(a, styles_dir, layout_names[0..layout_count], output_dir_path, site_conf, &resolver);
     }
 }
 
 fn loadTemplates(
     a: Allocator,
-    layouts_dir: Dir,
+    styles_dir: Dir,
     layout_names: []const []const u8,
     resolver: *template.Resolver,
 ) !void {
     // Load _core/html/*.html as templates (e.g., base.html)
-    var core_html = layouts_dir.openDir("_core/html", .{ .iterate = true }) catch |err| {
+    var core_html = styles_dir.openDir("_core/html", .{ .iterate = true }) catch |err| {
         if (err == error.FileNotFound) return;
         return err;
     };
@@ -130,7 +131,7 @@ fn loadTemplates(
     // Load {layout}/html/*.html (e.g., page.html, semantica.html)
     for (layout_names) |layout_name| {
         const html_subdir = try std.fmt.allocPrint(a, "{s}/html", .{layout_name});
-        var layout_html = layouts_dir.openDir(html_subdir, .{ .iterate = true }) catch continue;
+        var layout_html = styles_dir.openDir(html_subdir, .{ .iterate = true }) catch continue;
         defer layout_html.close();
 
         var iter = layout_html.iterate();
@@ -274,14 +275,14 @@ fn copyDirRecursive(src_path: []const u8, dest_path: []const u8) !void {
 
 fn processLayout(
     a: Allocator,
-    layouts_dir: Dir,
+    styles_dir: Dir,
     data_dir: Dir,
     layout_name: []const u8,
     css_output_path: []const u8,
     js_output_path: []const u8,
 ) !void {
     const manifest_path = try std.fmt.allocPrint(a, "{s}/layout.yaml", .{layout_name});
-    const manifest_src = layouts_dir.readFileAlloc(a, manifest_path, 1 << 20) catch |err|
+    const manifest_src = styles_dir.readFileAlloc(a, manifest_path, 1 << 20) catch |err|
         fatalFmt("cannot read manifest '{s}': {}", .{ manifest_path, err });
 
     const manifest = try yaml.parse(a, manifest_src);
@@ -303,7 +304,7 @@ fn processLayout(
 
     for (css_list.list) |entry| {
         const pattern = entry.str() orelse continue;
-        try appendCssFiles(a, layouts_dir, pattern, writer);
+        try appendCssFiles(a, styles_dir, pattern, writer);
     }
 
     if (std.mem.lastIndexOfScalar(u8, css_output_path, '/')) |last_slash| {
@@ -332,13 +333,13 @@ fn processLayout(
 
 fn appendCssFiles(
     a: Allocator,
-    layouts_dir: Dir,
+    styles_dir: Dir,
     pattern: []const u8,
     writer: std.ArrayList(u8).Writer,
 ) !void {
     if (std.mem.endsWith(u8, pattern, "/*")) {
         const dir_path = pattern[0 .. pattern.len - 2];
-        var dir = layouts_dir.openDir(dir_path, .{ .iterate = true }) catch {
+        var dir = styles_dir.openDir(dir_path, .{ .iterate = true }) catch {
             return;
         };
         defer dir.close();
@@ -359,20 +360,20 @@ fn appendCssFiles(
 
         for (names.items) |name| {
             const full_path = try std.fmt.allocPrint(a, "{s}/{s}", .{ dir_path, name });
-            try appendSingleFile(a, layouts_dir, full_path, writer);
+            try appendSingleFile(a, styles_dir, full_path, writer);
         }
     } else {
-        try appendSingleFile(a, layouts_dir, pattern, writer);
+        try appendSingleFile(a, styles_dir, pattern, writer);
     }
 }
 
 fn appendSingleFile(
     a: Allocator,
-    layouts_dir: Dir,
+    styles_dir: Dir,
     path: []const u8,
     writer: std.ArrayList(u8).Writer,
 ) !void {
-    const content = layouts_dir.readFileAlloc(a, path, 1 << 20) catch {
+    const content = styles_dir.readFileAlloc(a, path, 1 << 20) catch {
         return;
     };
     try writer.print("/* {s} */\n", .{path});
@@ -740,7 +741,7 @@ fn generateTypographyTokens(
             \\or reduce the number of steps above the base.
             \\
             \\To disable this check for this layout, add to the typography section
-            \\of layouts/{s}/layout.yaml:
+            \\of styles/{s}/layout.yaml:
             \\
             \\  accessibility_check: false
             \\
@@ -934,9 +935,9 @@ fn clampToString(a: Allocator, min_size: f64, max_size: f64, min_vp: f64, max_vp
     return buf.items;
 }
 
-fn validatePatternExamples(a: Allocator, layouts_dir: Dir, layout_name: []const u8) usize {
+fn validatePatternExamples(a: Allocator, styles_dir: Dir, layout_name: []const u8) usize {
     const manifest_path = std.fmt.allocPrint(a, "{s}/layout.yaml", .{layout_name}) catch @panic("OOM");
-    const manifest_src = layouts_dir.readFileAlloc(a, manifest_path, 1 << 20) catch return 0;
+    const manifest_src = styles_dir.readFileAlloc(a, manifest_path, 1 << 20) catch return 0;
     const manifest = yaml.parse(a, manifest_src) catch return 0;
     const css_list = manifest.get("css") orelse return 0;
 
@@ -951,21 +952,21 @@ fn validatePatternExamples(a: Allocator, layouts_dir: Dir, layout_name: []const 
 
             if (std.mem.endsWith(u8, pat, "/*")) {
                 const dir_path = pat[0 .. pat.len - 2];
-                var dir = layouts_dir.openDir(dir_path, .{ .iterate = true }) catch continue;
+                var dir = styles_dir.openDir(dir_path, .{ .iterate = true }) catch continue;
                 defer dir.close();
                 var iter = dir.iterate();
                 while (iter.next() catch null) |fentry| {
                     if (fentry.kind != .file) continue;
                     if (!std.mem.endsWith(u8, fentry.name, ".css")) continue;
                     const basename = fentry.name[0 .. fentry.name.len - 4];
-                    missing += checkExample(a, layouts_dir, dir_path, cat, basename);
+                    missing += checkExample(a, styles_dir, dir_path, cat, basename);
                 }
             } else if (std.mem.endsWith(u8, pat, ".css")) {
                 const last_slash = std.mem.lastIndexOfScalar(u8, pat, '/') orelse continue;
                 const fname = pat[last_slash + 1 ..];
                 const basename = fname[0 .. fname.len - 4];
                 const dir_path = pat[0..last_slash];
-                missing += checkExample(a, layouts_dir, dir_path, cat, basename);
+                missing += checkExample(a, styles_dir, dir_path, cat, basename);
             }
             break;
         }
@@ -974,14 +975,14 @@ fn validatePatternExamples(a: Allocator, layouts_dir: Dir, layout_name: []const 
     return missing;
 }
 
-fn checkExample(a: Allocator, layouts_dir: Dir, dir_path: []const u8, category: []const u8, basename: []const u8) usize {
+fn checkExample(a: Allocator, styles_dir: Dir, dir_path: []const u8, category: []const u8, basename: []const u8) usize {
     const parent_dir = if (std.mem.lastIndexOfScalar(u8, dir_path, '/')) |s|
         dir_path[0..s]
     else
         "";
     const example_path = std.fmt.allocPrint(a, "{s}/examples/{s}/{s}.html", .{ parent_dir, category, basename }) catch @panic("OOM");
 
-    layouts_dir.access(example_path, .{}) catch {
+    styles_dir.access(example_path, .{}) catch {
         std.log.warn("missing example for pattern: {s}/{s}/{s}.css -> expected {s}", .{ parent_dir, category, basename, example_path });
         return 1;
     };
@@ -1140,9 +1141,98 @@ fn parseCssDoc(a: Allocator, css_source: []const u8) CssDoc {
     return doc;
 }
 
+fn renderPatternTemplate(
+    a: Allocator,
+    template_name: []const u8,
+    out_path: []const u8,
+    ctx: *const template.Context,
+    res: *const template.Resolver,
+) void {
+    const tmpl = res.get(template_name) orelse
+        fatalFmt("template '{s}' not found", .{template_name});
+    const rendered = template.render(a, tmpl, ctx, res) catch |err|
+        fatalFmt("error rendering '{s}': {}", .{ template_name, err });
+    writeGeneratedFile(out_path, rendered);
+}
+
+fn buildPatternContext(a: Allocator, ln: []const u8, dn: []const u8, site_conf: yaml.Value) template.Context {
+    var ctx: template.Context = .{ .dev_mode = true };
+    ctx.putVar(a, "page.layout_display_name", dn) catch @panic("OOM");
+    ctx.putVar(a, "page.layout_css", std.fmt.allocPrint(a, "/css/{s}.css", .{ln}) catch @panic("OOM")) catch @panic("OOM");
+    const nav = buildNavLinks(a, ln);
+    ctx.putCollection(a, "nav.links", nav.items) catch @panic("OOM");
+    putSiteVars(a, &ctx, site_conf);
+    return ctx;
+}
+
+fn addNavLink(a: Allocator, nav: *std.ArrayList(template.Entry), label: []const u8, url: []const u8) void {
+    var entry: template.Entry = .{};
+    entry.values.put(a, "label", label) catch @panic("OOM");
+    entry.values.put(a, "url", url) catch @panic("OOM");
+    nav.append(a, entry) catch @panic("OOM");
+}
+
+fn buildNavLinks(a: Allocator, ln: []const u8) std.ArrayList(template.Entry) {
+    var nav = std.ArrayList(template.Entry){};
+    addNavLink(a, &nav, "All Patterns", "/patterns/");
+    addNavLink(a, &nav, "Overview", std.fmt.allocPrint(a, "/patterns/{s}/", .{ln}) catch @panic("OOM"));
+    addNavLink(a, &nav, "Colour", std.fmt.allocPrint(a, "/patterns/{s}/tokens/colour/", .{ln}) catch @panic("OOM"));
+    addNavLink(a, &nav, "Typography", std.fmt.allocPrint(a, "/patterns/{s}/tokens/typography/", .{ln}) catch @panic("OOM"));
+    addNavLink(a, &nav, "Spacing", std.fmt.allocPrint(a, "/patterns/{s}/tokens/spacing/", .{ln}) catch @panic("OOM"));
+    addNavLink(a, &nav, "Compositions", std.fmt.allocPrint(a, "/patterns/{s}/css/compositions/", .{ln}) catch @panic("OOM"));
+    addNavLink(a, &nav, "Utilities", std.fmt.allocPrint(a, "/patterns/{s}/css/utilities/", .{ln}) catch @panic("OOM"));
+    return nav;
+}
+
+fn putSiteVars(a: Allocator, ctx: *template.Context, site_conf: yaml.Value) void {
+    if (site_conf == .map) {
+        var site_iter = site_conf.map.iterator();
+        while (site_iter.next()) |kv| {
+            const key = std.fmt.allocPrint(a, "site.{s}", .{kv.key_ptr.*}) catch @panic("OOM");
+            if (kv.value_ptr.str()) |val| {
+                ctx.putVar(a, key, val) catch @panic("OOM");
+            }
+        }
+    }
+}
+
+fn generatePatternIndex(
+    a: Allocator,
+    styles_dir: Dir,
+    layout_names: []const []const u8,
+    output_dir_path: []const u8,
+    site_conf: yaml.Value,
+    resolver: *const template.Resolver,
+) void {
+    const tmpl = resolver.get("pattern-index.html") orelse
+        fatalFmt("pattern-index.html template not found", .{});
+
+    var entries = std.ArrayList(template.Entry){};
+    for (layout_names) |ln| {
+        const manifest_path = std.fmt.allocPrint(a, "{s}/layout.yaml", .{ln}) catch @panic("OOM");
+        const manifest_src = styles_dir.readFileAlloc(a, manifest_path, 1 << 20) catch continue;
+        const manifest = yaml.parse(a, manifest_src) catch continue;
+        const dn = if (manifest.get("name")) |v| v.str() orelse ln else ln;
+        var entry: template.Entry = .{};
+        entry.values.put(a, "label", dn) catch @panic("OOM");
+        entry.values.put(a, "url", std.fmt.allocPrint(a, "/patterns/{s}/", .{ln}) catch @panic("OOM")) catch @panic("OOM");
+        entries.append(a, entry) catch @panic("OOM");
+    }
+
+    var ctx: template.Context = .{ .dev_mode = true };
+    ctx.putVar(a, "page.title", "Pattern Libraries") catch @panic("OOM");
+    ctx.putCollection(a, "layouts", entries.items) catch @panic("OOM");
+    putSiteVars(a, &ctx, site_conf);
+
+    const rendered = template.render(a, tmpl, &ctx, resolver) catch |err|
+        fatalFmt("error rendering pattern index: {}", .{err});
+    const out_path = std.fmt.allocPrint(a, "{s}/patterns/index.html", .{output_dir_path}) catch @panic("OOM");
+    writeGeneratedFile(out_path, rendered);
+}
+
 fn generatePatternLibrary(
     a: Allocator,
-    layouts_dir: Dir,
+    styles_dir: Dir,
     data_dir: Dir,
     layout_name: []const u8,
     output_dir_path: []const u8,
@@ -1150,260 +1240,240 @@ fn generatePatternLibrary(
     resolver: *const template.Resolver,
 ) !void {
     const manifest_path = try std.fmt.allocPrint(a, "{s}/layout.yaml", .{layout_name});
-    const manifest_src = layouts_dir.readFileAlloc(a, manifest_path, 1 << 20) catch |err|
+    const manifest_src = styles_dir.readFileAlloc(a, manifest_path, 1 << 20) catch |err|
         fatalFmt("cannot read manifest '{s}': {}", .{ manifest_path, err });
     const manifest = try yaml.parse(a, manifest_src);
     const display_name = if (manifest.get("name")) |v| v.str() orelse layout_name else layout_name;
 
-    // Render a pattern library page as HTML through the template engine
-    const renderPatternPage = struct {
-        fn render(
-            alloc: Allocator,
-            out_path: []const u8,
-            title: []const u8,
-            body_html: []const u8,
-            ln: []const u8,
-            sc: yaml.Value,
-            res: *const template.Resolver,
-        ) void {
-            const pl_template = res.get("pattern-library.html") orelse
-                fatalFmt("pattern-library.html template not found", .{});
-
-            var ctx: template.Context = .{ .dev_mode = true };
-            ctx.putVar(alloc, "page.title", title) catch @panic("OOM");
-            ctx.putSlot(alloc, "", body_html) catch @panic("OOM");
-            _ = ln;
-
-            if (sc == .map) {
-                var site_iter = sc.map.iterator();
-                while (site_iter.next()) |kv| {
-                    const key = std.fmt.allocPrint(alloc, "site.{s}", .{kv.key_ptr.*}) catch @panic("OOM");
-                    if (kv.value_ptr.str()) |val| {
-                        ctx.putVar(alloc, key, val) catch @panic("OOM");
-                    }
-                }
-            }
-
-            const rendered = template.render(alloc, pl_template, &ctx, res) catch |err|
-                fatalFmt("error rendering pattern page '{s}': {}", .{ title, err });
-            writeGeneratedFile(out_path, rendered);
-        }
-    }.render;
-
     // Overview page
     {
-        var body = std.ArrayList(u8){};
-        const w = body.writer(a);
-        try w.print("<p>Pattern library for the <strong>{s}</strong> layout.</p>\n", .{display_name});
+        var ctx = buildPatternContext(a, layout_name, display_name, site_conf);
+        ctx.putVar(a, "page.title", display_name) catch @panic("OOM");
 
         if (manifest.get("tokens")) |tokens| {
-            try w.writeAll("<h2>Token Configuration</h2>\n<ul>\n");
             if (tokens.get("viewport")) |vp| {
-                const mn = if (vp.get("min")) |v| v.str() orelse "?" else "?";
-                const mx = if (vp.get("max")) |v| v.str() orelse "?" else "?";
-                try w.print("<li><strong>Viewport:</strong> {s}px &ndash; {s}px</li>\n", .{ mn, mx });
+                ctx.putVar(a, "page.has_tokens", "true") catch @panic("OOM");
+                ctx.putVar(a, "page.viewport_min", if (vp.get("min")) |v| v.str() orelse "?" else "?") catch @panic("OOM");
+                ctx.putVar(a, "page.viewport_max", if (vp.get("max")) |v| v.str() orelse "?" else "?") catch @panic("OOM");
             }
-            try w.writeAll("</ul>\n");
         }
 
         if (manifest.get("highlights")) |hl| {
-            try w.writeAll("<h2>Colour Schemes</h2>\n");
             if (hl.get("default")) |def| {
-                const ds = if (def.get("scheme")) |v| v.str() orelse "?" else "?";
-                const dm = if (def.get("mode")) |v| v.str() orelse "?" else "?";
-                try w.print("<p>Default: <strong>{s}</strong> ({s})</p>\n", .{ ds, dm });
+                ctx.putVar(a, "page.has_highlights", "true") catch @panic("OOM");
+                ctx.putVar(a, "page.default_scheme", if (def.get("scheme")) |v| v.str() orelse "?" else "?") catch @panic("OOM");
+                ctx.putVar(a, "page.default_mode", if (def.get("mode")) |v| v.str() orelse "?" else "?") catch @panic("OOM");
             }
         }
 
         if (manifest.get("css")) |css_list| {
-            try w.writeAll("<h2>CSS Files</h2>\n<ul>\n");
+            ctx.putVar(a, "page.has_css", "true") catch @panic("OOM");
+            var entries = std.ArrayList(template.Entry){};
             for (css_list.list) |entry| {
                 const pat = entry.str() orelse continue;
-                try w.print("<li><code>{s}</code></li>\n", .{pat});
+                var e: template.Entry = .{};
+                e.values.put(a, "path", pat) catch @panic("OOM");
+                entries.append(a, e) catch @panic("OOM");
             }
-            try w.writeAll("</ul>\n");
+            ctx.putCollection(a, "overview.css_files", entries.items) catch @panic("OOM");
         }
 
         const path = try std.fmt.allocPrint(a, "{s}/patterns/{s}/index.html", .{ output_dir_path, layout_name });
-        renderPatternPage(a, path, display_name, body.items, layout_name, site_conf, resolver);
+        renderPatternTemplate(a, "pattern-overview.html", path, &ctx, resolver);
     }
 
     // Colour page
-    if (manifest.get("highlights")) |highlights| {
-        var body = std.ArrayList(u8){};
-        const w = body.writer(a);
+    {
+        var ctx = buildPatternContext(a, layout_name, display_name, site_conf);
+        ctx.putVar(a, "page.title", "Colour Tokens") catch @panic("OOM");
 
-        const schemes = highlights.get("schemes") orelse {
-            try w.writeAll("<p>No colour schemes configured for this layout.</p>\n");
-            const path = try std.fmt.allocPrint(a, "{s}/patterns/{s}/tokens/colour/index.html", .{ output_dir_path, layout_name });
-            renderPatternPage(a, path, "Colour Tokens", body.items, layout_name, site_conf, resolver);
-            return;
-        };
+        if (manifest.get("highlights")) |highlights| {
+            if (highlights.get("schemes")) |schemes| {
+                ctx.putVar(a, "page.has_schemes", "true") catch @panic("OOM");
 
-        const default_hl = highlights.get("default");
-        var default_scheme: ?[]const u8 = null;
-        var default_mode: ?[]const u8 = null;
-        if (default_hl) |d| {
-            default_scheme = if (d.get("scheme")) |v| v.str() else null;
-            default_mode = if (d.get("mode")) |v| v.str() else null;
-        }
-
-        for (schemes.list) |entry| {
-            const spec = entry.str() orelse continue;
-            const dot = std.mem.indexOfScalar(u8, spec, '.') orelse continue;
-            const scheme_name = spec[0..dot];
-            const mode = spec[dot + 1 ..];
-
-            const file_path = try std.fmt.allocPrint(a, "colours/{s}.yaml", .{scheme_name});
-            const scheme_src = data_dir.readFileAlloc(a, file_path, 1 << 20) catch continue;
-            const scheme = yaml.parse(a, scheme_src) catch continue;
-            const variant = scheme.get(mode) orelse continue;
-            const palette = variant.get("palette") orelse continue;
-            const meta = variant.get("meta") orelse continue;
-            const label = if (meta.get("name")) |v| v.str() orelse spec else spec;
-
-            const is_default = if (default_scheme) |ds|
-                std.mem.eql(u8, ds, scheme_name) and
-                    std.mem.eql(u8, default_mode orelse "", mode)
-            else
-                false;
-
-            try w.print("<h2>{s}", .{label});
-            if (is_default) try w.writeAll(" (default)");
-            try w.writeAll("</h2>\n");
-
-            if (variant.get("styles")) |styles| {
-                try emitHtmlSwatchTable(a, styles, palette, w, "text", "color-text", "Text");
-                try emitHtmlSwatchTable(a, styles, palette, w, "background", "color-bg", "Background");
-            }
-
-            if (variant.get("syntax")) |syntax| {
-                const syn_map = switch (syntax) {
-                    .map => |m| m,
-                    else => continue,
-                };
-                try w.writeAll("<h3>Syntax</h3>\n<table class=\"patterns__swatches\">\n");
-                try w.writeAll("<thead><tr><th></th><th>Role</th><th>Palette</th><th>Hex</th><th>Property</th></tr></thead>\n<tbody>\n");
-                var syn_iter = syn_map.iterator();
-                while (syn_iter.next()) |se| {
-                    const role = se.key_ptr.*;
-                    const pkey = se.value_ptr.str() orelse continue;
-                    const hex = resolvePalette(palette, pkey);
-                    try w.print("<tr><td><span class=\"patterns__swatch\" style=\"background:{s}\"></span></td>", .{hex});
-                    try w.print("<td>{s}</td><td>{s}</td><td><code>{s}</code></td>", .{ role, pkey, hex });
-                    try w.print("<td><code>--syntax-{s}</code></td></tr>\n", .{role});
+                const default_hl = highlights.get("default");
+                var default_scheme: ?[]const u8 = null;
+                var default_mode: ?[]const u8 = null;
+                if (default_hl) |d| {
+                    default_scheme = if (d.get("scheme")) |v| v.str() else null;
+                    default_mode = if (d.get("mode")) |v| v.str() else null;
                 }
-                try w.writeAll("</tbody></table>\n");
+
+                var entries = std.ArrayList(template.Entry){};
+                for (schemes.list) |entry| {
+                    const spec = entry.str() orelse continue;
+                    const dot = std.mem.indexOfScalar(u8, spec, '.') orelse continue;
+                    const scheme_name = spec[0..dot];
+                    const mode = spec[dot + 1 ..];
+
+                    const file_path = try std.fmt.allocPrint(a, "colours/{s}.yaml", .{scheme_name});
+                    const scheme_src = data_dir.readFileAlloc(a, file_path, 1 << 20) catch continue;
+                    const scheme_yaml = yaml.parse(a, scheme_src) catch continue;
+                    const variant = scheme_yaml.get(mode) orelse continue;
+                    const palette = variant.get("palette") orelse continue;
+                    const meta = variant.get("meta") orelse continue;
+                    const label = if (meta.get("name")) |v| v.str() orelse spec else spec;
+
+                    const is_default = if (default_scheme) |ds|
+                        std.mem.eql(u8, ds, scheme_name) and
+                            std.mem.eql(u8, default_mode orelse "", mode)
+                    else
+                        false;
+
+                    var swatch_buf = std.ArrayList(u8){};
+                    const sw = swatch_buf.writer(a);
+                    if (variant.get("styles")) |styles| {
+                        try emitHtmlSwatchTable(a, styles, palette, sw, "text", "color-text", "Text");
+                        try emitHtmlSwatchTable(a, styles, palette, sw, "background", "color-bg", "Background");
+                    }
+                    if (variant.get("syntax")) |syntax| {
+                        const syn_map = switch (syntax) {
+                            .map => |m| m,
+                            else => continue,
+                        };
+                        try sw.writeAll("<h3>Syntax</h3>\n<table class=\"patterns__swatches\">\n");
+                        try sw.writeAll("<thead><tr><th></th><th>Role</th><th>Palette</th><th>Hex</th><th>Property</th></tr></thead>\n<tbody>\n");
+                        var syn_iter = syn_map.iterator();
+                        while (syn_iter.next()) |se| {
+                            const role = se.key_ptr.*;
+                            const pkey = se.value_ptr.str() orelse continue;
+                            const hex = resolvePalette(palette, pkey);
+                            try sw.print("<tr><td><span class=\"patterns__swatch\" style=\"background:{s}\"></span></td>", .{hex});
+                            try sw.print("<td>{s}</td><td>{s}</td><td><code>{s}</code></td>", .{ role, pkey, hex });
+                            try sw.print("<td><code>--syntax-{s}</code></td></tr>\n", .{role});
+                        }
+                        try sw.writeAll("</tbody></table>\n");
+                    }
+
+                    var e: template.Entry = .{};
+                    const display_label = if (is_default)
+                        std.fmt.allocPrint(a, "{s} (default)", .{label}) catch @panic("OOM")
+                    else
+                        label;
+                    e.values.put(a, "label", display_label) catch @panic("OOM");
+                    e.values.put(a, "swatches", swatch_buf.items) catch @panic("OOM");
+                    entries.append(a, e) catch @panic("OOM");
+                }
+                ctx.putCollection(a, "colour.schemes", entries.items) catch @panic("OOM");
             }
         }
 
         const path = try std.fmt.allocPrint(a, "{s}/patterns/{s}/tokens/colour/index.html", .{ output_dir_path, layout_name });
-        renderPatternPage(a, path, "Colour Tokens", body.items, layout_name, site_conf, resolver);
+        renderPatternTemplate(a, "pattern-colour.html", path, &ctx, resolver);
     }
 
     // Typography page
-    if (manifest.get("tokens")) |tokens| {
-        var body = std.ArrayList(u8){};
-        const w = body.writer(a);
+    {
+        var ctx = buildPatternContext(a, layout_name, display_name, site_conf);
+        ctx.putVar(a, "page.title", "Typography Tokens") catch @panic("OOM");
 
-        const viewport = tokens.get("viewport");
-        const typo = tokens.get("typography");
-        if (viewport != null and typo != null) {
-            const min_vp = parseFloatValue(viewport.?.get("min"));
-            const max_vp = parseFloatValue(viewport.?.get("max"));
-            var min_base: f64 = 16.0;
-            var max_base: f64 = 16.0;
-            if (typo.?.get("base")) |base| {
-                const mb = parseFloatValue(base.get("min"));
-                const xb = parseFloatValue(base.get("max"));
-                if (mb > 0) min_base = mb;
-                if (xb > 0) max_base = xb;
-            }
-            if (typo.?.get("scale") != null and typo.?.get("steps") != null and min_vp > 0 and max_vp > 0) {
-                const scale = typo.?.get("scale").?;
-                const steps = typo.?.get("steps").?;
-                const min_ratio = parseFloatValue(scale.get("min"));
-                const max_ratio = parseFloatValue(scale.get("max"));
-                const steps_above: i32 = @intCast(parseUintValue(steps.get("above")));
-                const steps_below: i32 = @intCast(parseUintValue(steps.get("below")));
-
-                try w.writeAll("<table class=\"patterns__tokens\">\n");
-                try w.writeAll("<thead><tr><th>Step</th><th>Property</th><th>Min</th><th>Max</th><th>Sample</th></tr></thead>\n<tbody>\n");
-                var step: i32 = -steps_below;
-                while (step <= steps_above) : (step += 1) {
-                    const step_f: f64 = @floatFromInt(step);
-                    const min_fs = min_base * std.math.pow(f64, min_ratio, step_f);
-                    const max_fs = max_base * std.math.pow(f64, max_ratio, step_f);
-                    const clamp = try clampToString(a, min_fs, max_fs, min_vp, max_vp);
-                    var min_buf: [16]u8 = undefined;
-                    const min_str = std.fmt.bufPrint(&min_buf, "{d:.1}", .{min_fs}) catch "?";
-                    var max_buf: [16]u8 = undefined;
-                    const max_str = std.fmt.bufPrint(&max_buf, "{d:.1}", .{max_fs}) catch "?";
-                    try w.print("<tr><td>{d}</td><td><code>--size-step-{d}</code></td>", .{ step, step });
-                    try w.print("<td>{s}px</td><td>{s}px</td>", .{ min_str, max_str });
-                    try w.print("<td><span style=\"font-size:{s}\">Aa</span></td></tr>\n", .{clamp});
-                }
-                try w.writeAll("</tbody></table>\n");
-            }
-        } else {
-            try w.writeAll("<p>No typography configuration.</p>\n");
-        }
-
-        const path = try std.fmt.allocPrint(a, "{s}/patterns/{s}/tokens/typography/index.html", .{ output_dir_path, layout_name });
-        renderPatternPage(a, path, "Typography Tokens", body.items, layout_name, site_conf, resolver);
-    }
-
-    // Spacing page
-    if (manifest.get("tokens")) |tokens| {
-        var body = std.ArrayList(u8){};
-        const w = body.writer(a);
-
-        const viewport = tokens.get("viewport");
-        const spacing = tokens.get("spacing");
-        if (viewport != null and spacing != null) {
-            const min_vp = parseFloatValue(viewport.?.get("min"));
-            const max_vp = parseFloatValue(viewport.?.get("max"));
-            var min_base: f64 = 16.0;
-            var max_base: f64 = 16.0;
-            if (tokens.get("typography")) |typo| {
-                if (typo.get("base")) |base| {
+        if (manifest.get("tokens")) |tokens| {
+            const viewport = tokens.get("viewport");
+            const typo = tokens.get("typography");
+            if (viewport != null and typo != null) {
+                const min_vp = parseFloatValue(viewport.?.get("min"));
+                const max_vp = parseFloatValue(viewport.?.get("max"));
+                var min_base: f64 = 16.0;
+                var max_base: f64 = 16.0;
+                if (typo.?.get("base")) |base| {
                     const mb = parseFloatValue(base.get("min"));
                     const xb = parseFloatValue(base.get("max"));
                     if (mb > 0) min_base = mb;
                     if (xb > 0) max_base = xb;
                 }
+                if (typo.?.get("scale") != null and typo.?.get("steps") != null and min_vp > 0 and max_vp > 0) {
+                    const scale = typo.?.get("scale").?;
+                    const steps = typo.?.get("steps").?;
+                    const min_ratio = parseFloatValue(scale.get("min"));
+                    const max_ratio = parseFloatValue(scale.get("max"));
+                    const steps_above: i32 = @intCast(parseUintValue(steps.get("above")));
+                    const steps_below: i32 = @intCast(parseUintValue(steps.get("below")));
+
+                    ctx.putVar(a, "page.has_tokens", "true") catch @panic("OOM");
+                    var entries = std.ArrayList(template.Entry){};
+                    var step: i32 = -steps_below;
+                    while (step <= steps_above) : (step += 1) {
+                        const step_f: f64 = @floatFromInt(step);
+                        const min_fs = min_base * std.math.pow(f64, min_ratio, step_f);
+                        const max_fs = max_base * std.math.pow(f64, max_ratio, step_f);
+                        var entry: template.Entry = .{};
+                        entry.values.put(a, "step", std.fmt.allocPrint(a, "{d}", .{step}) catch @panic("OOM")) catch @panic("OOM");
+                        entry.values.put(a, "property", std.fmt.allocPrint(a, "--size-step-{d}", .{step}) catch @panic("OOM")) catch @panic("OOM");
+                        entry.values.put(a, "min_px", std.fmt.allocPrint(a, "{d:.1}px", .{min_fs}) catch @panic("OOM")) catch @panic("OOM");
+                        entry.values.put(a, "max_px", std.fmt.allocPrint(a, "{d:.1}px", .{max_fs}) catch @panic("OOM")) catch @panic("OOM");
+                        entry.values.put(a, "clamp", clampToString(a, min_fs, max_fs, min_vp, max_vp) catch @panic("OOM")) catch @panic("OOM");
+                        entries.append(a, entry) catch @panic("OOM");
+                    }
+                    ctx.putCollection(a, "typography.steps", entries.items) catch @panic("OOM");
+                }
             }
-            if (min_vp > 0 and max_vp > 0) {
-                try emitHtmlSpacingSection(a, w, spacing.?, min_vp, max_vp, min_base, max_base);
+        }
+
+        const path = try std.fmt.allocPrint(a, "{s}/patterns/{s}/tokens/typography/index.html", .{ output_dir_path, layout_name });
+        renderPatternTemplate(a, "pattern-typography.html", path, &ctx, resolver);
+    }
+
+    // Spacing page
+    {
+        var ctx = buildPatternContext(a, layout_name, display_name, site_conf);
+        ctx.putVar(a, "page.title", "Spacing Tokens") catch @panic("OOM");
+
+        if (manifest.get("tokens")) |tokens| {
+            const viewport = tokens.get("viewport");
+            const spacing_conf = tokens.get("spacing");
+            if (viewport != null and spacing_conf != null) {
+                const min_vp = parseFloatValue(viewport.?.get("min"));
+                const max_vp = parseFloatValue(viewport.?.get("max"));
+                var min_base: f64 = 16.0;
+                var max_base: f64 = 16.0;
+                if (tokens.get("typography")) |typo| {
+                    if (typo.get("base")) |base| {
+                        const mb = parseFloatValue(base.get("min"));
+                        const xb = parseFloatValue(base.get("max"));
+                        if (mb > 0) min_base = mb;
+                        if (xb > 0) max_base = xb;
+                    }
+                }
+                if (min_vp > 0 and max_vp > 0) {
+                    ctx.putVar(a, "page.has_tokens", "true") catch @panic("OOM");
+                    const space_entries = try buildSpacingEntries(a, spacing_conf.?, min_vp, max_vp, min_base, max_base);
+                    ctx.putCollection(a, "spacing.sizes", space_entries) catch @panic("OOM");
+                }
             }
-        } else {
-            try w.writeAll("<p>No spacing configuration.</p>\n");
         }
 
         const path = try std.fmt.allocPrint(a, "{s}/patterns/{s}/tokens/spacing/index.html", .{ output_dir_path, layout_name });
-        renderPatternPage(a, path, "Spacing Tokens", body.items, layout_name, site_conf, resolver);
+        renderPatternTemplate(a, "pattern-spacing.html", path, &ctx, resolver);
     }
 
     // Compositions page
-    if (manifest.get("css")) |css_list| {
-        var body = std.ArrayList(u8){};
-        const w = body.writer(a);
-        try w.writeAll("<p>Layout compositions for arranging content without media queries.</p>\n");
-        try emitPatternCategory(a, layouts_dir, css_list, "compositions", w);
-
+    {
+        var ctx = buildPatternContext(a, layout_name, display_name, site_conf);
+        ctx.putVar(a, "page.title", "Compositions") catch @panic("OOM");
+        if (manifest.get("css")) |css_list| {
+            const entries = try buildPatternEntries(a, styles_dir, css_list, "compositions");
+            if (entries.len > 0) {
+                ctx.putVar(a, "page.has_entries", "true") catch @panic("OOM");
+                ctx.putCollection(a, "css.entries", entries) catch @panic("OOM");
+            }
+        }
         const path = try std.fmt.allocPrint(a, "{s}/patterns/{s}/css/compositions/index.html", .{ output_dir_path, layout_name });
-        renderPatternPage(a, path, "Compositions", body.items, layout_name, site_conf, resolver);
+        renderPatternTemplate(a, "pattern-compositions.html", path, &ctx, resolver);
     }
 
     // Utilities page
-    if (manifest.get("css")) |css_list| {
-        var body = std.ArrayList(u8){};
-        const w = body.writer(a);
-        try w.writeAll("<p>Single-purpose utility classes.</p>\n");
-        try emitPatternCategory(a, layouts_dir, css_list, "utilities", w);
-
+    {
+        var ctx = buildPatternContext(a, layout_name, display_name, site_conf);
+        ctx.putVar(a, "page.title", "Utilities") catch @panic("OOM");
+        if (manifest.get("css")) |css_list| {
+            const entries = try buildPatternEntries(a, styles_dir, css_list, "utilities");
+            if (entries.len > 0) {
+                ctx.putVar(a, "page.has_entries", "true") catch @panic("OOM");
+                ctx.putCollection(a, "css.entries", entries) catch @panic("OOM");
+            }
+        }
         const path = try std.fmt.allocPrint(a, "{s}/patterns/{s}/css/utilities/index.html", .{ output_dir_path, layout_name });
-        renderPatternPage(a, path, "Utilities", body.items, layout_name, site_conf, resolver);
+        renderPatternTemplate(a, "pattern-utilities.html", path, &ctx, resolver);
     }
 }
 
@@ -1436,15 +1506,14 @@ fn emitHtmlSwatchTable(
     try w.writeAll("</tbody></table>\n");
 }
 
-fn emitHtmlSpacingSection(
+fn buildSpacingEntries(
     a: Allocator,
-    w: std.ArrayList(u8).Writer,
     spacing: yaml.Value,
     min_vp: f64,
     max_vp: f64,
     min_base: f64,
     max_base: f64,
-) !void {
+) ![]const template.Entry {
     var neg_mults: [16]f64 = undefined;
     var neg_count: usize = 0;
     if (spacing.get("negative")) |neg| {
@@ -1470,7 +1539,6 @@ fn emitHtmlSpacingSection(
 
     var sizes: [32]SpaceSize = undefined;
     var size_count: usize = 0;
-
     {
         var i = neg_count;
         while (i > 0) {
@@ -1496,39 +1564,34 @@ fn emitHtmlSpacingSection(
         size_count += 1;
     }
 
-    try w.writeAll("<h2>Base Sizes</h2>\n<table class=\"patterns__tokens\">\n");
-    try w.writeAll("<thead><tr><th>Label</th><th>Property</th><th>Min</th><th>Max</th><th>Preview</th></tr></thead>\n<tbody>\n");
+    var entries = std.ArrayList(template.Entry){};
     for (sizes[0..size_count]) |sz| {
         const clamp = try clampToString(a, sz.min_size, sz.max_size, min_vp, max_vp);
-        var min_buf: [16]u8 = undefined;
-        const min_str = std.fmt.bufPrint(&min_buf, "{d:.0}", .{sz.min_size}) catch "?";
-        var max_buf: [16]u8 = undefined;
-        const max_str = std.fmt.bufPrint(&max_buf, "{d:.0}", .{sz.max_size}) catch "?";
-        try w.print("<tr><td>{s}</td><td><code>--space-{s}</code></td>", .{ sz.label, sz.label });
-        try w.print("<td>{s}px</td><td>{s}px</td>", .{ min_str, max_str });
-        try w.print("<td><span class=\"patterns__spacing-bar\" style=\"--patterns-bar-height:{s}\"></span></td></tr>\n", .{clamp});
+        var entry: template.Entry = .{};
+        entry.values.put(a, "label", sz.label) catch @panic("OOM");
+        entry.values.put(a, "property", std.fmt.allocPrint(a, "--space-{s}", .{sz.label}) catch @panic("OOM")) catch @panic("OOM");
+        entry.values.put(a, "min_px", std.fmt.allocPrint(a, "{d:.0}px", .{sz.min_size}) catch @panic("OOM")) catch @panic("OOM");
+        entry.values.put(a, "max_px", std.fmt.allocPrint(a, "{d:.0}px", .{sz.max_size}) catch @panic("OOM")) catch @panic("OOM");
+        entry.values.put(a, "clamp", clamp) catch @panic("OOM");
+        entries.append(a, entry) catch @panic("OOM");
     }
-    try w.writeAll("</tbody></table>\n");
+    return entries.toOwnedSlice(a) catch @panic("OOM");
 }
 
-fn emitPatternCategory(
+fn buildPatternEntries(
     a: Allocator,
-    layouts_dir: Dir,
+    styles_dir: Dir,
     css_list: yaml.Value,
     category: []const u8,
-    w: std.ArrayList(u8).Writer,
-) !void {
+) ![]const template.Entry {
     var css_paths = std.ArrayList([]const u8){};
-
     for (css_list.list) |entry| {
         const pat = entry.str() orelse continue;
         if (std.mem.indexOf(u8, pat, category) == null) continue;
-
         if (std.mem.endsWith(u8, pat, "/*")) {
             const dir_path = pat[0 .. pat.len - 2];
-            var dir = layouts_dir.openDir(dir_path, .{ .iterate = true }) catch continue;
+            var dir = styles_dir.openDir(dir_path, .{ .iterate = true }) catch continue;
             defer dir.close();
-
             var names = std.ArrayList([]const u8){};
             var iter = dir.iterate();
             while (try iter.next()) |fentry| {
@@ -1542,23 +1605,19 @@ fn emitPatternCategory(
                 }
             }.cmp);
             for (names.items) |name| {
-                const full = try std.fmt.allocPrint(a, "{s}/{s}", .{ dir_path, name });
-                try css_paths.append(a, full);
+                try css_paths.append(a, try std.fmt.allocPrint(a, "{s}/{s}", .{ dir_path, name }));
             }
         } else if (std.mem.endsWith(u8, pat, ".css")) {
             try css_paths.append(a, pat);
         }
     }
 
-    if (css_paths.items.len == 0) {
-        try w.print("<p>No {s} configured for this layout.</p>\n", .{category});
-        return;
-    }
-
+    var entries = std.ArrayList(template.Entry){};
     for (css_paths.items) |css_path| {
-        const css_source = layouts_dir.readFileAlloc(a, css_path, 1 << 20) catch continue;
+        var buf = std.ArrayList(u8){};
+        const w = buf.writer(a);
+        const css_source = styles_dir.readFileAlloc(a, css_path, 1 << 20) catch continue;
         const doc = parseCssDoc(a, css_source);
-
         const basename = blk: {
             const last_slash = std.mem.lastIndexOfScalar(u8, css_path, '/');
             const fname = if (last_slash) |s| css_path[s + 1 ..] else css_path;
@@ -1567,73 +1626,48 @@ fn emitPatternCategory(
         };
 
         try w.print("<article class=\"pattern\" id=\"{s}\">\n", .{basename});
-
         if (doc.name.len > 0) {
             try w.print("<h2>{s}</h2>\n", .{doc.name});
         } else {
             try w.print("<h2>{s}</h2>\n", .{basename});
         }
-
-        if (doc.description.len > 0) {
-            try w.print("<p>{s}</p>\n", .{doc.description});
-        }
-
-        if (doc.url.len > 0) {
-            try w.print("<p><a href=\"{s}\">Reference</a></p>\n", .{doc.url});
-        }
-
+        if (doc.description.len > 0) try w.print("<p>{s}</p>\n", .{doc.description});
+        if (doc.url.len > 0) try w.print("<p><a href=\"{s}\">Reference</a></p>\n", .{doc.url});
         if (doc.properties.len > 0) {
-            try w.writeAll("<h3>Custom properties</h3>\n");
-            try w.writeAll("<table class=\"patterns__props\">\n");
+            try w.writeAll("<h3>Custom properties</h3>\n<table class=\"patterns__props\">\n");
             try w.writeAll("<thead><tr><th>Property</th><th>Default</th><th>Description</th></tr></thead>\n<tbody>\n");
             for (doc.properties) |prop| {
-                try w.print("<tr><td><code>{s}</code></td><td><code>{s}</code></td><td>{s}</td></tr>\n", .{
-                    prop.name, prop.default, prop.description,
-                });
+                try w.print("<tr><td><code>{s}</code></td><td><code>{s}</code></td><td>{s}</td></tr>\n", .{ prop.name, prop.default, prop.description });
             }
             try w.writeAll("</tbody></table>\n");
         }
-
         if (doc.exceptions.len > 0) {
-            try w.writeAll("<h3>Exceptions</h3>\n");
-            try w.writeAll("<table class=\"patterns__exceptions\">\n");
+            try w.writeAll("<h3>Exceptions</h3>\n<table class=\"patterns__exceptions\">\n");
             try w.writeAll("<thead><tr><th>Selector</th><th>Description</th></tr></thead>\n<tbody>\n");
             for (doc.exceptions) |exc| {
-                try w.print("<tr><td><code>{s}</code></td><td>{s}</td></tr>\n", .{
-                    exc.selector, exc.description,
-                });
+                try w.print("<tr><td><code>{s}</code></td><td>{s}</td></tr>\n", .{ exc.selector, exc.description });
             }
             try w.writeAll("</tbody></table>\n");
         }
-
-        // Example: look for matching .html file in examples/ directory
         const example_path = blk: {
-            const dir_part = if (std.mem.lastIndexOfScalar(u8, css_path, '/')) |s|
-                css_path[0..s]
-            else
-                "";
-            const parent_dir = if (std.mem.lastIndexOfScalar(u8, dir_part, '/')) |s|
-                dir_part[0..s]
-            else
-                "";
+            const dir_part = if (std.mem.lastIndexOfScalar(u8, css_path, '/')) |s| css_path[0..s] else "";
+            const parent_dir = if (std.mem.lastIndexOfScalar(u8, dir_part, '/')) |s| dir_part[0..s] else "";
             break :blk try std.fmt.allocPrint(a, "{s}/examples/{s}/{s}.html", .{ parent_dir, category, basename });
         };
-
-        if (layouts_dir.readFileAlloc(a, example_path, 1 << 20)) |example_src| {
-            try w.writeAll("<h3>Example</h3>\n");
-            try w.writeAll("<div class=\"pattern__preview\">\n");
+        if (styles_dir.readFileAlloc(a, example_path, 1 << 20)) |example_src| {
+            try w.writeAll("<h3>Example</h3>\n<div class=\"pattern__preview\">\n");
             try w.writeAll(example_src);
-            try w.writeAll("\n</div>\n");
-
-            try w.writeAll("<details>\n<summary>Source</summary>\n<pre><code>");
+            try w.writeAll("\n</div>\n<details>\n<summary>Source</summary>\n<pre><code>");
             try emitHtmlEscaped(w, example_src);
             try w.writeAll("</code></pre>\n</details>\n");
-        } else |_| {
-            std.log.warn("missing example: {s}", .{example_path});
-        }
-
+        } else |_| {}
         try w.writeAll("</article>\n");
+
+        var e: template.Entry = .{};
+        e.values.put(a, "article_html", buf.items) catch @panic("OOM");
+        entries.append(a, e) catch @panic("OOM");
     }
+    return entries.toOwnedSlice(a) catch @panic("OOM");
 }
 
 fn emitHtmlEscaped(w: std.ArrayList(u8).Writer, text: []const u8) !void {

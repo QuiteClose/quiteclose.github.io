@@ -82,7 +82,7 @@ Maps canonical code highlighting roles to palette names. These roles are shared 
 
 - All style and syntax values are **palette names**, not hex values. The indirection is intentional: the build pipeline resolves palette → hex.
 - Palette sizes vary by scheme (Solarized has 16, CRT has 8). There is no fixed palette size.
-- Scheme files are parsed by `scripts/yaml.zig` (a minimal custom YAML parser). Supported YAML features: maps, lists, quoted/unquoted strings, comments. No anchors, aliases, or flow syntax.
+- Scheme files are parsed by `src/yaml.zig` (a minimal custom YAML parser). Supported YAML features: maps, lists, quoted/unquoted strings, comments. No anchors, aliases, or flow syntax.
 - When adding a new scheme: add the YAML file here and reference it in each layout's `layout.yaml` manifest (under `highlights.schemes`).
 - Which schemes a layout uses, and its default scheme/mode, are configured in `styles/{layout}/layout.yaml`, not here.
 

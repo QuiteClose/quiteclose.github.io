@@ -49,7 +49,7 @@ pub fn build(b: *std.Build) void {
 fn addGenerateStep(b: *std.Build, gen: *std.Build.Step.Compile, dev: bool) std.Build.LazyPath {
     const run = b.addRunArtifact(gen);
 
-    run.addDirectoryArg(b.path("layouts"));
+    run.addDirectoryArg(b.path("styles"));
     run.addDirectoryArg(b.path("data"));
     run.addDirectoryArg(b.path("pages"));
     run.addDirectoryArg(b.path("assets"));

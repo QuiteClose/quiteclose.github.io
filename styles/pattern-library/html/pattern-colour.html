@@ -1,0 +1,16 @@
+<x-extend template="pattern-library.html">
+<x-define slot="layout-css">
+<link rel="stylesheet" x-var:href="page.layout_css" />
+<link rel="stylesheet" href="/css/patterns.css" />
+</x-define>
+<x-define slot="content">
+<x-if var="page.has_schemes">
+<x-for scheme in colour.schemes>
+<h2><x-var name="scheme.label" /></h2>
+<x-raw name="scheme.swatches" />
+</x-for>
+</x-if><x-else>
+<p>No colour schemes configured for this layout.</p>
+</x-else>
+</x-define>
+</x-extend>
