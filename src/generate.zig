@@ -86,7 +86,18 @@ fn processAll(
     copyDirRecursive(assets_dir_path, output_dir_path) catch |err|
         fatalFmt("cannot copy assets: {}", .{err});
 
-    // 6. Pattern library (dev mode only)
+    // 6. Validate pattern examples exist
+    {
+        var missing_count: usize = 0;
+        for (layout_names[0..layout_count]) |layout_name| {
+            missing_count += validatePatternExamples(a, layouts_dir, layout_name);
+        }
+        if (missing_count > 0) {
+            fatalFmt("{d} pattern(s) missing example files -- see warnings above", .{missing_count});
+        }
+    }
+
+    // 7. Pattern library (dev mode only)
     if (dev) {
         for (layout_names[0..layout_count]) |layout_name| {
             generatePatternLibrary(a, layouts_dir, data_dir, layout_name, output_dir_path, site_conf, &resolver) catch |err|
@@ -923,6 +934,212 @@ fn clampToString(a: Allocator, min_size: f64, max_size: f64, min_vp: f64, max_vp
     return buf.items;
 }
 
+fn validatePatternExamples(a: Allocator, layouts_dir: Dir, layout_name: []const u8) usize {
+    const manifest_path = std.fmt.allocPrint(a, "{s}/layout.yaml", .{layout_name}) catch @panic("OOM");
+    const manifest_src = layouts_dir.readFileAlloc(a, manifest_path, 1 << 20) catch return 0;
+    const manifest = yaml.parse(a, manifest_src) catch return 0;
+    const css_list = manifest.get("css") orelse return 0;
+
+    const categories = [_][]const u8{ "compositions", "utilities", "blocks" };
+    var missing: usize = 0;
+
+    for (css_list.list) |entry| {
+        const pat = entry.str() orelse continue;
+
+        for (&categories) |cat| {
+            if (std.mem.indexOf(u8, pat, cat) == null) continue;
+
+            if (std.mem.endsWith(u8, pat, "/*")) {
+                const dir_path = pat[0 .. pat.len - 2];
+                var dir = layouts_dir.openDir(dir_path, .{ .iterate = true }) catch continue;
+                defer dir.close();
+                var iter = dir.iterate();
+                while (iter.next() catch null) |fentry| {
+                    if (fentry.kind != .file) continue;
+                    if (!std.mem.endsWith(u8, fentry.name, ".css")) continue;
+                    const basename = fentry.name[0 .. fentry.name.len - 4];
+                    missing += checkExample(a, layouts_dir, dir_path, cat, basename);
+                }
+            } else if (std.mem.endsWith(u8, pat, ".css")) {
+                const last_slash = std.mem.lastIndexOfScalar(u8, pat, '/') orelse continue;
+                const fname = pat[last_slash + 1 ..];
+                const basename = fname[0 .. fname.len - 4];
+                const dir_path = pat[0..last_slash];
+                missing += checkExample(a, layouts_dir, dir_path, cat, basename);
+            }
+            break;
+        }
+    }
+
+    return missing;
+}
+
+fn checkExample(a: Allocator, layouts_dir: Dir, dir_path: []const u8, category: []const u8, basename: []const u8) usize {
+    const parent_dir = if (std.mem.lastIndexOfScalar(u8, dir_path, '/')) |s|
+        dir_path[0..s]
+    else
+        "";
+    const example_path = std.fmt.allocPrint(a, "{s}/examples/{s}/{s}.html", .{ parent_dir, category, basename }) catch @panic("OOM");
+
+    layouts_dir.access(example_path, .{}) catch {
+        std.log.warn("missing example for pattern: {s}/{s}/{s}.css -> expected {s}", .{ parent_dir, category, basename, example_path });
+        return 1;
+    };
+    return 0;
+}
+
+const CssDoc = struct {
+    name: []const u8,
+    description: []const u8,
+    url: []const u8,
+    properties: []const CssProp,
+    exceptions: []const CssException,
+};
+
+const CssProp = struct {
+    name: []const u8,
+    default: []const u8,
+    description: []const u8,
+};
+
+const CssException = struct {
+    selector: []const u8,
+    description: []const u8,
+};
+
+fn parseCssDoc(a: Allocator, css_source: []const u8) CssDoc {
+    var doc: CssDoc = .{
+        .name = "",
+        .description = "",
+        .url = "",
+        .properties = &.{},
+        .exceptions = &.{},
+    };
+
+    const end = std.mem.indexOf(u8, css_source, "*/") orelse return doc;
+    if (!std.mem.startsWith(u8, std.mem.trimLeft(u8, css_source, " \t"), "/*")) return doc;
+
+    var props = std.ArrayList(CssProp){};
+    var excepts = std.ArrayList(CssException){};
+    var desc_lines = std.ArrayList([]const u8){};
+    var in_props = false;
+    var in_exceptions = false;
+
+    const comment = css_source[0 .. end + 2];
+    var lines_iter = std.mem.splitScalar(u8, comment, '\n');
+    var first_content = true;
+    while (lines_iter.next()) |raw_line| {
+        var line = std.mem.trim(u8, raw_line, " \t");
+        if (std.mem.startsWith(u8, line, "/*")) line = std.mem.trim(u8, line[2..], " \t*");
+        if (std.mem.startsWith(u8, line, "*/")) continue;
+        if (std.mem.startsWith(u8, line, "* ")) {
+            line = line[2..];
+        } else if (std.mem.eql(u8, line, "*")) {
+            line = "";
+        }
+        line = std.mem.trim(u8, line, " \t");
+
+        if (line.len == 0) {
+            in_props = false;
+            in_exceptions = false;
+            continue;
+        }
+
+        if (std.mem.startsWith(u8, line, "Custom properties:")) {
+            in_props = true;
+            in_exceptions = false;
+            continue;
+        }
+        if (std.mem.startsWith(u8, line, "Exceptions:") or std.mem.startsWith(u8, line, "Exception:")) {
+            in_exceptions = true;
+            in_props = false;
+            continue;
+        }
+
+        if (in_props) {
+            if (std.mem.startsWith(u8, line, "--")) {
+                var prop_name: []const u8 = line;
+                var prop_default: []const u8 = "";
+                var prop_desc: []const u8 = "";
+
+                if (std.mem.indexOf(u8, line, " -- ")) |dash_pos| {
+                    prop_name = std.mem.trim(u8, line[0..dash_pos], " \t");
+                    prop_desc = line[dash_pos + 4 ..];
+                }
+
+                if (std.mem.indexOf(u8, prop_name, "(")) |paren_open| {
+                    if (std.mem.lastIndexOfScalar(u8, prop_name, ')')) |paren_close| {
+                        prop_default = prop_name[paren_open + 1 .. paren_close];
+                        prop_name = std.mem.trim(u8, prop_name[0..paren_open], " \t");
+                    }
+                }
+
+                props.append(a, .{
+                    .name = prop_name,
+                    .default = prop_default,
+                    .description = prop_desc,
+                }) catch @panic("OOM");
+            }
+            continue;
+        }
+
+        if (in_exceptions) {
+            var sel: []const u8 = line;
+            var exc_desc: []const u8 = "";
+            if (std.mem.indexOf(u8, line, " -- ")) |dash_pos| {
+                sel = std.mem.trim(u8, line[0..dash_pos], " \t");
+                exc_desc = line[dash_pos + 4 ..];
+            }
+            excepts.append(a, .{
+                .selector = sel,
+                .description = exc_desc,
+            }) catch @panic("OOM");
+            continue;
+        }
+
+        if (first_content) {
+            if (std.mem.endsWith(u8, line, " composition") or
+                std.mem.endsWith(u8, line, " utility") or
+                std.mem.endsWith(u8, line, " COMPOSITION") or
+                std.mem.endsWith(u8, line, " UTILITY"))
+            {
+                doc.name = line;
+            } else {
+                doc.name = line;
+            }
+            first_content = false;
+            continue;
+        }
+
+        if (std.mem.startsWith(u8, line, "Every Layout:") or
+            std.mem.startsWith(u8, line, "https://"))
+        {
+            const url_part = if (std.mem.startsWith(u8, line, "Every Layout:"))
+                std.mem.trim(u8, line["Every Layout:".len..], " \t")
+            else
+                line;
+            doc.url = url_part;
+            continue;
+        }
+
+        desc_lines.append(a, line) catch @panic("OOM");
+    }
+
+    if (desc_lines.items.len > 0) {
+        var desc_buf = std.ArrayList(u8){};
+        for (desc_lines.items, 0..) |dl, idx| {
+            if (idx > 0) desc_buf.appendSlice(a, " ") catch @panic("OOM");
+            desc_buf.appendSlice(a, dl) catch @panic("OOM");
+        }
+        doc.description = (desc_buf.toOwnedSlice(a) catch @panic("OOM"));
+    }
+
+    doc.properties = props.toOwnedSlice(a) catch @panic("OOM");
+    doc.exceptions = excepts.toOwnedSlice(a) catch @panic("OOM");
+
+    return doc;
+}
+
 fn generatePatternLibrary(
     a: Allocator,
     layouts_dir: Dir,
@@ -1171,17 +1388,8 @@ fn generatePatternLibrary(
     if (manifest.get("css")) |css_list| {
         var body = std.ArrayList(u8){};
         const w = body.writer(a);
-        try w.writeAll("<p>Layout compositions included in this layout.</p>\n<ul>\n");
-        var has = false;
-        for (css_list.list) |entry| {
-            const pat = entry.str() orelse continue;
-            if (std.mem.indexOf(u8, pat, "compositions") != null) {
-                try w.print("<li><code>{s}</code></li>\n", .{pat});
-                has = true;
-            }
-        }
-        if (!has) try w.writeAll("<li>No compositions configured.</li>\n");
-        try w.writeAll("</ul>\n");
+        try w.writeAll("<p>Layout compositions for arranging content without media queries.</p>\n");
+        try emitPatternCategory(a, layouts_dir, css_list, "compositions", w);
 
         const path = try std.fmt.allocPrint(a, "{s}/patterns/{s}/css/compositions/index.html", .{ output_dir_path, layout_name });
         renderPatternPage(a, path, "Compositions", body.items, layout_name, site_conf, resolver);
@@ -1191,17 +1399,8 @@ fn generatePatternLibrary(
     if (manifest.get("css")) |css_list| {
         var body = std.ArrayList(u8){};
         const w = body.writer(a);
-        try w.writeAll("<p>Utility classes included in this layout.</p>\n<ul>\n");
-        var has = false;
-        for (css_list.list) |entry| {
-            const pat = entry.str() orelse continue;
-            if (std.mem.indexOf(u8, pat, "utilities") != null) {
-                try w.print("<li><code>{s}</code></li>\n", .{pat});
-                has = true;
-            }
-        }
-        if (!has) try w.writeAll("<li>No utilities configured.</li>\n");
-        try w.writeAll("</ul>\n");
+        try w.writeAll("<p>Single-purpose utility classes.</p>\n");
+        try emitPatternCategory(a, layouts_dir, css_list, "utilities", w);
 
         const path = try std.fmt.allocPrint(a, "{s}/patterns/{s}/css/utilities/index.html", .{ output_dir_path, layout_name });
         renderPatternPage(a, path, "Utilities", body.items, layout_name, site_conf, resolver);
@@ -1310,6 +1509,143 @@ fn emitHtmlSpacingSection(
         try w.print("<td><span class=\"patterns__spacing-bar\" style=\"--patterns-bar-height:{s}\"></span></td></tr>\n", .{clamp});
     }
     try w.writeAll("</tbody></table>\n");
+}
+
+fn emitPatternCategory(
+    a: Allocator,
+    layouts_dir: Dir,
+    css_list: yaml.Value,
+    category: []const u8,
+    w: std.ArrayList(u8).Writer,
+) !void {
+    var css_paths = std.ArrayList([]const u8){};
+
+    for (css_list.list) |entry| {
+        const pat = entry.str() orelse continue;
+        if (std.mem.indexOf(u8, pat, category) == null) continue;
+
+        if (std.mem.endsWith(u8, pat, "/*")) {
+            const dir_path = pat[0 .. pat.len - 2];
+            var dir = layouts_dir.openDir(dir_path, .{ .iterate = true }) catch continue;
+            defer dir.close();
+
+            var names = std.ArrayList([]const u8){};
+            var iter = dir.iterate();
+            while (try iter.next()) |fentry| {
+                if (fentry.kind != .file) continue;
+                if (!std.mem.endsWith(u8, fentry.name, ".css")) continue;
+                try names.append(a, try a.dupe(u8, fentry.name));
+            }
+            std.mem.sort([]const u8, names.items, {}, struct {
+                fn cmp(_: void, lhs: []const u8, rhs: []const u8) bool {
+                    return std.mem.order(u8, lhs, rhs) == .lt;
+                }
+            }.cmp);
+            for (names.items) |name| {
+                const full = try std.fmt.allocPrint(a, "{s}/{s}", .{ dir_path, name });
+                try css_paths.append(a, full);
+            }
+        } else if (std.mem.endsWith(u8, pat, ".css")) {
+            try css_paths.append(a, pat);
+        }
+    }
+
+    if (css_paths.items.len == 0) {
+        try w.print("<p>No {s} configured for this layout.</p>\n", .{category});
+        return;
+    }
+
+    for (css_paths.items) |css_path| {
+        const css_source = layouts_dir.readFileAlloc(a, css_path, 1 << 20) catch continue;
+        const doc = parseCssDoc(a, css_source);
+
+        const basename = blk: {
+            const last_slash = std.mem.lastIndexOfScalar(u8, css_path, '/');
+            const fname = if (last_slash) |s| css_path[s + 1 ..] else css_path;
+            if (std.mem.endsWith(u8, fname, ".css")) break :blk fname[0 .. fname.len - 4];
+            break :blk fname;
+        };
+
+        try w.print("<article class=\"pattern\" id=\"{s}\">\n", .{basename});
+
+        if (doc.name.len > 0) {
+            try w.print("<h2>{s}</h2>\n", .{doc.name});
+        } else {
+            try w.print("<h2>{s}</h2>\n", .{basename});
+        }
+
+        if (doc.description.len > 0) {
+            try w.print("<p>{s}</p>\n", .{doc.description});
+        }
+
+        if (doc.url.len > 0) {
+            try w.print("<p><a href=\"{s}\">Reference</a></p>\n", .{doc.url});
+        }
+
+        if (doc.properties.len > 0) {
+            try w.writeAll("<h3>Custom properties</h3>\n");
+            try w.writeAll("<table class=\"patterns__props\">\n");
+            try w.writeAll("<thead><tr><th>Property</th><th>Default</th><th>Description</th></tr></thead>\n<tbody>\n");
+            for (doc.properties) |prop| {
+                try w.print("<tr><td><code>{s}</code></td><td><code>{s}</code></td><td>{s}</td></tr>\n", .{
+                    prop.name, prop.default, prop.description,
+                });
+            }
+            try w.writeAll("</tbody></table>\n");
+        }
+
+        if (doc.exceptions.len > 0) {
+            try w.writeAll("<h3>Exceptions</h3>\n");
+            try w.writeAll("<table class=\"patterns__exceptions\">\n");
+            try w.writeAll("<thead><tr><th>Selector</th><th>Description</th></tr></thead>\n<tbody>\n");
+            for (doc.exceptions) |exc| {
+                try w.print("<tr><td><code>{s}</code></td><td>{s}</td></tr>\n", .{
+                    exc.selector, exc.description,
+                });
+            }
+            try w.writeAll("</tbody></table>\n");
+        }
+
+        // Example: look for matching .html file in examples/ directory
+        const example_path = blk: {
+            const dir_part = if (std.mem.lastIndexOfScalar(u8, css_path, '/')) |s|
+                css_path[0..s]
+            else
+                "";
+            const parent_dir = if (std.mem.lastIndexOfScalar(u8, dir_part, '/')) |s|
+                dir_part[0..s]
+            else
+                "";
+            break :blk try std.fmt.allocPrint(a, "{s}/examples/{s}/{s}.html", .{ parent_dir, category, basename });
+        };
+
+        if (layouts_dir.readFileAlloc(a, example_path, 1 << 20)) |example_src| {
+            try w.writeAll("<h3>Example</h3>\n");
+            try w.writeAll("<div class=\"pattern__preview\">\n");
+            try w.writeAll(example_src);
+            try w.writeAll("\n</div>\n");
+
+            try w.writeAll("<details>\n<summary>Source</summary>\n<pre><code>");
+            try emitHtmlEscaped(w, example_src);
+            try w.writeAll("</code></pre>\n</details>\n");
+        } else |_| {
+            std.log.warn("missing example: {s}", .{example_path});
+        }
+
+        try w.writeAll("</article>\n");
+    }
+}
+
+fn emitHtmlEscaped(w: std.ArrayList(u8).Writer, text: []const u8) !void {
+    for (text) |c| {
+        switch (c) {
+            '&' => try w.writeAll("&amp;"),
+            '<' => try w.writeAll("&lt;"),
+            '>' => try w.writeAll("&gt;"),
+            '"' => try w.writeAll("&quot;"),
+            else => try w.writeByte(c),
+        }
+    }
 }
 
 fn fatal(msg: []const u8) noreturn {

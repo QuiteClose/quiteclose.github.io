@@ -101,6 +101,12 @@ fn renderTemplate(a: Allocator, input: []const u8, ctx: *const Context, resolver
     var slots: std.StringArrayHashMapUnmanaged([]const u8) = .{};
     defer slots.deinit(a);
 
+    var allocs: std.ArrayList([]const u8) = .{};
+    defer {
+        for (allocs.items) |s| a.free(s);
+        allocs.deinit(a);
+    }
+
     var sit = ctx.slots.iterator();
     while (sit.next()) |entry| {
         try slots.put(a, entry.key_ptr.*, entry.value_ptr.*);
@@ -121,7 +127,7 @@ fn renderTemplate(a: Allocator, input: []const u8, ctx: *const Context, resolver
         if (visited.contains(parent_name)) return error.CircularReference;
         try visited.put(a, parent_name, {});
 
-        try parseDefines(a, rest[tag_end + 1 ..], &slots);
+        try parseDefines(a, rest[tag_end + 1 ..], &slots, &allocs);
 
         current = resolver.get(parent_name) orelse return error.TemplateNotFound;
     }
@@ -227,13 +233,15 @@ fn renderSlot(a: Allocator, input: []const u8, start: usize, ctx: *const Context
     const tag_end = findTagEnd(rest) orelse return error.MalformedElement;
     const is_self_closing = tag_end > 0 and rest[tag_end - 1] == '/';
 
+    const indent = detectIndent(out.items);
+
     if (is_self_closing) {
         const tag = rest[0 .. tag_end + 1];
         const name = extractAttrValue(tag, "name") orelse "";
         if (ctx.getSlot(name)) |content| {
             const rendered = try renderContent(a, content, ctx, resolver, depth);
             defer a.free(rendered);
-            try out.appendSlice(a, rendered);
+            try appendIndented(a, out, rendered, indent);
         }
         return start + tag_end + 1;
     }
@@ -249,13 +257,47 @@ fn renderSlot(a: Allocator, input: []const u8, start: usize, ctx: *const Context
     if (ctx.getSlot(name)) |content| {
         const rendered = try renderContent(a, content, ctx, resolver, depth);
         defer a.free(rendered);
-        try out.appendSlice(a, rendered);
+        try appendIndented(a, out, rendered, indent);
     } else {
         const rendered = try renderContent(a, default_content, ctx, resolver, depth);
         defer a.free(rendered);
-        try out.appendSlice(a, rendered);
+        try appendIndented(a, out, rendered, indent);
     }
     return start + total_end;
+}
+
+fn appendIndented(a: Allocator, out: *std.ArrayList(u8), content: []const u8, indent: []const u8) RenderError!void {
+    if (content.len == 0) {
+        while (out.items.len > 0 and
+            (out.items[out.items.len - 1] == ' ' or out.items[out.items.len - 1] == '\t'))
+        {
+            _ = out.pop();
+        }
+        return;
+    }
+    if (indent.len == 0) {
+        try out.appendSlice(a, content);
+        return;
+    }
+    var first = true;
+    var line_start: usize = 0;
+    var i: usize = 0;
+    while (i <= content.len) : (i += 1) {
+        if (i == content.len or content[i] == '\n') {
+            const line = content[line_start..i];
+            if (first) {
+                try out.appendSlice(a, line);
+                first = false;
+            } else {
+                try out.append(a, '\n');
+                if (line.len > 0) {
+                    try out.appendSlice(a, indent);
+                    try out.appendSlice(a, line);
+                }
+            }
+            line_start = i + 1;
+        }
+    }
 }
 
 fn renderInclude(a: Allocator, input: []const u8, start: usize, ctx: *const Context, resolver: *const Resolver, depth: usize, out: *std.ArrayList(u8)) RenderError!usize {
@@ -270,15 +312,20 @@ fn renderInclude(a: Allocator, input: []const u8, start: usize, ctx: *const Cont
     defer inc_attrs.deinit(a);
 
     var body: []const u8 = "";
+    var body_allocated = false;
     var consumed: usize = tag_end + 1;
 
     if (!is_self_closing) {
         const content_start = tag_end + 1;
         const close = std.mem.indexOf(u8, rest[content_start..], "</x-include>") orelse
             return error.MalformedElement;
-        body = rest[content_start .. content_start + close];
+        const raw_body = rest[content_start .. content_start + close];
+        const strip_result = try stripCommonIndent(a, raw_body);
+        body = strip_result.slice;
+        body_allocated = strip_result.allocated;
         consumed = content_start + close + "</x-include>".len;
     }
+    defer if (body_allocated) a.free(body);
 
     const tmpl_content = resolver.get(tmpl_name) orelse return error.TemplateNotFound;
 
@@ -296,9 +343,10 @@ fn renderInclude(a: Allocator, input: []const u8, start: usize, ctx: *const Cont
         .dev_mode = ctx.dev_mode,
     };
 
+    const indent = detectIndent(out.items);
     const rendered = try renderContent(a, tmpl_content, &child_ctx, resolver, depth + 1);
     defer a.free(rendered);
-    try out.appendSlice(a, rendered);
+    try appendIndented(a, out, rendered, indent);
 
     return start + consumed;
 }
@@ -457,6 +505,124 @@ fn hasBoolAttr(tag: []const u8, name: []const u8) bool {
     return false;
 }
 
+fn detectIndent(output: []const u8) []const u8 {
+    if (output.len == 0) return "";
+    var i = output.len;
+    while (i > 0) {
+        i -= 1;
+        if (output[i] == '\n') {
+            const after = output[i + 1 ..];
+            var ws: usize = 0;
+            while (ws < after.len and (after[ws] == ' ' or after[ws] == '\t')) : (ws += 1) {}
+            if (ws == after.len) return after;
+            return "";
+        }
+    }
+    return "";
+}
+
+const IndentResult = struct {
+    slice: []const u8,
+    allocated: bool,
+};
+
+fn stripCommonIndent(a: Allocator, content: []const u8) RenderError!IndentResult {
+    if (content.len == 0) return .{ .slice = "", .allocated = false };
+
+    var lines: std.ArrayList([]const u8) = .{};
+    defer lines.deinit(a);
+    var line_start: usize = 0;
+    var j: usize = 0;
+    while (j <= content.len) : (j += 1) {
+        if (j == content.len or content[j] == '\n') {
+            try lines.append(a, content[line_start..j]);
+            line_start = j + 1;
+        }
+    }
+
+    var first_content: usize = 0;
+    while (first_content < lines.items.len) : (first_content += 1) {
+        if (isContentLine(lines.items[first_content])) break;
+    }
+    var last_content: usize = lines.items.len;
+    while (last_content > first_content) {
+        last_content -= 1;
+        if (isContentLine(lines.items[last_content])) {
+            last_content += 1;
+            break;
+        }
+    }
+    if (first_content >= last_content) return .{ .slice = "", .allocated = false };
+
+    const content_lines = lines.items[first_content..last_content];
+
+    var min_indent: ?usize = null;
+    for (content_lines) |line| {
+        if (!isContentLine(line)) continue;
+        var ws: usize = 0;
+        while (ws < line.len and (line[ws] == ' ' or line[ws] == '\t')) : (ws += 1) {}
+        if (min_indent == null or ws < min_indent.?) min_indent = ws;
+    }
+
+    const strip = min_indent orelse 0;
+
+    if (strip == 0 and content_lines.len == 1) {
+        return .{ .slice = content_lines[0], .allocated = false };
+    }
+    if (strip == 0) {
+        var out: std.ArrayList(u8) = .{};
+        errdefer out.deinit(a);
+        for (content_lines, 0..) |line, idx| {
+            if (idx > 0) try out.append(a, '\n');
+            try out.appendSlice(a, line);
+        }
+        return .{ .slice = try out.toOwnedSlice(a), .allocated = true };
+    }
+
+    var out: std.ArrayList(u8) = .{};
+    errdefer out.deinit(a);
+    for (content_lines, 0..) |line, idx| {
+        if (idx > 0) try out.append(a, '\n');
+        if (isContentLine(line)) {
+            if (line.len > strip) {
+                try out.appendSlice(a, line[strip..]);
+            }
+        }
+    }
+
+    return .{ .slice = try out.toOwnedSlice(a), .allocated = true };
+}
+
+fn isContentLine(line: []const u8) bool {
+    for (line) |c| {
+        if (c != ' ' and c != '\t' and c != '\r') return true;
+    }
+    return false;
+}
+
+fn reindent(a: Allocator, content: []const u8, indent: []const u8) RenderError![]const u8 {
+    if (content.len == 0 or indent.len == 0) return try a.dupe(u8, content);
+
+    var out: std.ArrayList(u8) = .{};
+    errdefer out.deinit(a);
+
+    var line_start: usize = 0;
+    var i: usize = 0;
+    while (i <= content.len) : (i += 1) {
+        if (i == content.len or content[i] == '\n') {
+            const line = content[line_start..i];
+            if (line_start > 0) try out.append(a, '\n');
+            if (line.len > 0) {
+                try out.appendSlice(a, indent);
+                try out.appendSlice(a, line);
+            }
+            line_start = i + 1;
+        }
+    }
+
+    return out.toOwnedSlice(a);
+}
+
 fn renderFor(a: Allocator, input: []const u8, start: usize, ctx: *const Context, resolver: *const Resolver, depth: usize, out: *std.ArrayList(u8)) RenderError!usize {
     const rest = input[start..];
     const tag_end = findTagEnd(rest) orelse return error.MalformedElement;
@@ -585,7 +751,7 @@ fn skipWhitespace(input: []const u8) usize {
     return i;
 }
 
-fn parseDefines(a: Allocator, input: []const u8, slots: *std.StringArrayHashMapUnmanaged([]const u8)) RenderError!void {
+fn parseDefines(a: Allocator, input: []const u8, slots: *std.StringArrayHashMapUnmanaged([]const u8), allocs: *std.ArrayList([]const u8)) RenderError!void {
     var i: usize = 0;
     while (i < input.len) {
         const ws = skipWhitespace(input[i..]);
@@ -600,8 +766,12 @@ fn parseDefines(a: Allocator, input: []const u8, slots: *std.StringArrayHashMapU
             const content_start = tag_end + 1;
             const close = std.mem.indexOf(u8, rest[content_start..], "</x-define>") orelse
                 return error.MalformedElement;
-            const content = rest[content_start .. content_start + close];
-            try slots.put(a, slot_name, content);
+            const raw_content = rest[content_start .. content_start + close];
+            const result = try stripCommonIndent(a, raw_content);
+            if (result.allocated) {
+                try allocs.append(a, result.slice);
+            }
+            try slots.put(a, slot_name, result.slice);
             i += content_start + close + "</x-define>".len;
         } else {
             i += 1;
@@ -1454,6 +1624,136 @@ test "for_nested_shadow" {
 }
 
 // ---------------------------------------------------------------------------
+// Slot indentation tests
+// ---------------------------------------------------------------------------
+
+test "indent_single_line" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+
+    const tmpl = "<body>\n  <main>\n    <x-slot />\n  </main>\n</body>";
+    try resolver.put(a, "layout.html", tmpl);
+
+    const page = "<x-extend template=\"layout.html\">\n<x-define slot=\"\">\n<h1>Hello</h1>\n</x-define>";
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = try render(a, page, &ctx, &resolver);
+    defer a.free(result);
+
+    try testing.expectEqualStrings("<body>\n  <main>\n    <h1>Hello</h1>\n  </main>\n</body>", result);
+}
+
+test "indent_multi_line" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+
+    const tmpl = "<body>\n  <main>\n    <x-slot />\n  </main>\n</body>";
+    try resolver.put(a, "layout.html", tmpl);
+
+    const page = "<x-extend template=\"layout.html\">\n<x-define slot=\"\">\n<h1>Title</h1>\n<p>Text</p>\n</x-define>";
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = try render(a, page, &ctx, &resolver);
+    defer a.free(result);
+
+    try testing.expectEqualStrings("<body>\n  <main>\n    <h1>Title</h1>\n    <p>Text</p>\n  </main>\n</body>", result);
+}
+
+test "indent_nested_structure" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+
+    const tmpl = "<body>\n  <main>\n    <x-slot />\n  </main>\n</body>";
+    try resolver.put(a, "layout.html", tmpl);
+
+    const page = "<x-extend template=\"layout.html\">\n<x-define slot=\"\">\n<div>\n  <h1>Title</h1>\n</div>\n</x-define>";
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = try render(a, page, &ctx, &resolver);
+    defer a.free(result);
+
+    try testing.expectEqualStrings("<body>\n  <main>\n    <div>\n      <h1>Title</h1>\n    </div>\n  </main>\n</body>", result);
+}
+
+test "indent_include_body" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+
+    const component = "<section>\n  <x-slot />\n</section>";
+    try resolver.put(a, "box.html", component);
+
+    const input = "<main>\n  <x-include template=\"box.html\">\n    <h1>Title</h1>\n    <p>Text</p>\n  </x-include>\n</main>";
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = try render(a, input, &ctx, &resolver);
+    defer a.free(result);
+
+    try testing.expectEqualStrings("<main>\n  <section>\n    <h1>Title</h1>\n    <p>Text</p>\n  </section>\n</main>", result);
+}
+
+test "indent_named_slots_different_levels" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+
+    const tmpl = "<div>\n  <x-slot name=\"a\" />\n  <nav>\n    <x-slot name=\"b\" />\n  </nav>\n</div>";
+    try resolver.put(a, "layout.html", tmpl);
+
+    const page = "<x-extend template=\"layout.html\">\n<x-define slot=\"a\">\n<h1>Header</h1>\n</x-define>\n<x-define slot=\"b\">\n<ul>\n  <li>One</li>\n</ul>\n</x-define>";
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = try render(a, page, &ctx, &resolver);
+    defer a.free(result);
+
+    try testing.expectEqualStrings("<div>\n  <h1>Header</h1>\n  <nav>\n    <ul>\n      <li>One</li>\n    </ul>\n  </nav>\n</div>", result);
+}
+
+test "indent_zero_level_slot" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+
+    const tmpl = "<x-slot />";
+    try resolver.put(a, "layout.html", tmpl);
+
+    const page = "<x-extend template=\"layout.html\">\n<x-define slot=\"\">\n  <h1>Title</h1>\n  <p>Text</p>\n</x-define>";
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = try render(a, page, &ctx, &resolver);
+    defer a.free(result);
+
+    try testing.expectEqualStrings("<h1>Title</h1>\n<p>Text</p>", result);
+}
+
+test "indent_empty_content" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+
+    const tmpl = "<body>\n  <x-slot />\n</body>";
+    try resolver.put(a, "layout.html", tmpl);
+
+    const page = "<x-extend template=\"layout.html\">\n<x-define slot=\"\">\n</x-define>";
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = try render(a, page, &ctx, &resolver);
+    defer a.free(result);
+
+    try testing.expectEqualStrings("<body>\n\n</body>", result);
+}
+
+// ---------------------------------------------------------------------------
 // Integration test: full page render
 // ---------------------------------------------------------------------------
 
@@ -1536,7 +1836,7 @@ test "integration_full_page" {
     const result = try render(a, content_page, &ctx, &resolver);
     defer a.free(result);
 
-    const expected = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\" />\n<title>Welcome</title>\n<link rel=\"stylesheet\" href=\"/css/default.css\" />\n</head>\n<body>\n\n<nav class=\"site-nav\"><ul>\n<li><a href=\"/\">Home</a></li><li><a href=\"/about/\">About</a></li>\n</ul></nav>\n<main>\n<h1>Welcome</h1>\n\n<article><h2><a href=\"/posts/first/\">First Post</a></h2></article><article><h2><a href=\"/posts/second/\">Second Post</a></h2></article>\n</main>\n<footer>&copy; QuiteClose</footer>\n\n</body>\n</html>";
+    const expected = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\" />\n<title>Welcome</title>\n<link rel=\"stylesheet\" href=\"/css/default.css\" />\n</head>\n<body>\n<nav class=\"site-nav\"><ul>\n<li><a href=\"/\">Home</a></li><li><a href=\"/about/\">About</a></li>\n</ul></nav>\n<main><h1>Welcome</h1>\n\n<article><h2><a href=\"/posts/first/\">First Post</a></h2></article><article><h2><a href=\"/posts/second/\">Second Post</a></h2></article></main>\n<footer>&copy; QuiteClose</footer>\n</body>\n</html>";
 
     try testing.expectEqualStrings(expected, result);
 }
