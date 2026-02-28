@@ -1,5 +1,4 @@
-public/
-.zine-cache/
+.DS_Store
 zig-out/
 zig-cache/
 .zig-cache/
