@@ -1,0 +1,12 @@
+/*
+ * INDENT utility
+ * Adds a visible inline-start border to indent content blocks.
+ *
+ * Custom properties:
+ *   --indent-size (var(--space-xs-l))     -- border width
+ *   --indent-color (currentColor)         -- border colour
+ */
+.indent {
+  border-inline-start: var(--indent-size, var(--space-xs-l)) solid
+    var(--indent-color, currentColor);
+}

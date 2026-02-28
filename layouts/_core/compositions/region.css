@@ -1,0 +1,12 @@
+/*
+ * REGION composition
+ * Consistent vertical padding for page sections.
+ * Used alongside wrapper and flow to structure page regions.
+ *
+ * Custom properties:
+ *   --region-space (var(--space-m)) -- block padding
+ */
+.region {
+  padding-block: var(--region-space, var(--space-m));
+  position: relative;
+}

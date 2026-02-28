@@ -1,0 +1,36 @@
+/*
+ * SWITCHER composition
+ * Lays items horizontally when the container is wide enough,
+ * switches ALL items to vertical when it isn't. Unlike grid,
+ * it switches all-at-once -- no uneven last rows.
+ * Every Layout: https://every-layout.dev/layouts/switcher/
+ *
+ * Custom properties:
+ *   --gutter (var(--space-l))                           -- gap between items
+ *   --switcher-target-container-width (40rem)           -- width threshold
+ *   --switcher-vertical-alignment (flex-start)          -- align-items value
+ *
+ * The calc() trick: when the container is narrower than the
+ * threshold, (threshold - 100%) is positive and multiplied by
+ * 999 produces a large flex-basis that forces wrapping. When
+ * wider, the result is negative, clamped to 0 by flex-basis,
+ * and items sit inline.
+ *
+ * Default: 2 items side-by-side. Items beyond 2 get full width
+ * via :nth-child(n + 3).
+ */
+.switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gutter, var(--space-l));
+  align-items: var(--switcher-vertical-alignment, flex-start);
+}
+
+.switcher > * {
+  flex-grow: 1;
+  flex-basis: calc((var(--switcher-target-container-width, 40rem) - 100%) * 999);
+}
+
+.switcher > :nth-child(n + 3) {
+  flex-basis: 100%;
+}

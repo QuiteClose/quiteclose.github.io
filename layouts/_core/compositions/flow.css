@@ -1,0 +1,14 @@
+/*
+ * FLOW composition
+ * Vertical rhythm via the lobotomised owl selector.
+ * Every Layout: https://every-layout.dev/layouts/stack/
+ *
+ * Custom properties:
+ *   --flow-space (1em) -- space between sibling elements
+ *
+ * Blocks configure --flow-space to adjust spacing for their
+ * context (e.g. prose sets tighter spacing after headings).
+ */
+.flow > * + * {
+  margin-block-start: var(--flow-space, 1em);
+}

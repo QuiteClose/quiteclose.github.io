@@ -1,0 +1,37 @@
+/*
+ * GRID composition
+ * Auto-fill responsive grid. Columns are created based on
+ * available space without media queries.
+ * Every Layout: https://every-layout.dev/layouts/grid/
+ *
+ * Custom properties:
+ *   --gutter (var(--space-l))             -- gap between items
+ *   --grid-min-item-size (16rem)          -- minimum column width
+ *   --grid-placement (auto-fill)          -- auto-fill or auto-fit
+ *
+ * Exceptions:
+ *   [data-layout='50-50']  -- forces two equal columns
+ *   [data-layout='thirds'] -- forces three columns
+ *
+ * The min() wrapper around --grid-min-item-size prevents
+ * overflow when the container is narrower than the minimum
+ * item size (e.g. on small viewports).
+ */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(
+    var(--grid-placement, auto-fill),
+    minmax(min(var(--grid-min-item-size, 16rem), 100%), 1fr)
+  );
+  gap: var(--gutter, var(--space-l));
+}
+
+.grid[data-layout='50-50'] {
+  --grid-placement: auto-fit;
+  --grid-min-item-size: clamp(16rem, 50vw, 33rem);
+}
+
+.grid[data-layout='thirds'] {
+  --grid-placement: auto-fit;
+  --grid-min-item-size: clamp(16rem, 33%, 20rem);
+}
