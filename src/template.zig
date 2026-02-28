@@ -167,6 +167,22 @@ fn renderContent(a: Allocator, input: []const u8, ctx: *const Context, resolver:
             continue;
         }
 
+        if (std.mem.startsWith(u8, input[i..], "<x-raw ") or
+            std.mem.startsWith(u8, input[i..], "<x-raw/>"))
+        {
+            const rest = input[i..];
+            const end_offset = std.mem.indexOf(u8, rest, "/>") orelse
+                return error.MalformedElement;
+            const tag = rest[0 .. end_offset + 2];
+            const name = extractAttrValue(tag, "name") orelse
+                return error.MalformedElement;
+            if (ctx.getVar(name)) |value| {
+                try out.appendSlice(a, value);
+            }
+            i += end_offset + 2;
+            continue;
+        }
+
         if (std.mem.startsWith(u8, input[i..], "<x-attr ") or
             std.mem.startsWith(u8, input[i..], "<x-attr/>"))
         {
@@ -1839,4 +1855,61 @@ test "integration_full_page" {
     const expected = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\" />\n<title>Welcome</title>\n<link rel=\"stylesheet\" href=\"/css/default.css\" />\n</head>\n<body>\n<nav class=\"site-nav\"><ul>\n<li><a href=\"/\">Home</a></li><li><a href=\"/about/\">About</a></li>\n</ul></nav>\n<main><h1>Welcome</h1>\n\n<article><h2><a href=\"/posts/first/\">First Post</a></h2></article><article><h2><a href=\"/posts/second/\">Second Post</a></h2></article></main>\n<footer>&copy; QuiteClose</footer>\n</body>\n</html>";
 
     try testing.expectEqualStrings(expected, result);
+}
+
+// ---------------------------------------------------------------------------
+// x-raw tests
+// ---------------------------------------------------------------------------
+
+test "raw_basic" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "v", "hello");
+    const result = try render(a, "<x-raw name=\"v\" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("hello", result);
+}
+
+test "raw_html_not_escaped" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "v", "<strong>bold &amp; stuff</strong>");
+    const result = try render(a, "<x-raw name=\"v\" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("<strong>bold &amp; stuff</strong>", result);
+}
+
+test "raw_missing_is_empty" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    const result = try render(a, "before<x-raw name=\"missing\" />after", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("beforeafter", result);
+}
+
+test "raw_in_for_loop" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    var entries: [2]Entry = .{ .{}, .{} };
+    try entries[0].values.put(a, "html", "<em>one</em>");
+    try entries[1].values.put(a, "html", "<em>two</em>");
+    defer for (&entries) |*e| e.values.deinit(a);
+    try ctx.putCollection(a, "items", entries[0..]);
+
+    const result = try render(a, "<x-for item in items><x-raw name=\"item.html\" /></x-for>", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("<em>one</em><em>two</em>", result);
 }

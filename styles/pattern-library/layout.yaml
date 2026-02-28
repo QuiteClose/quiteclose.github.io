@@ -26,7 +26,6 @@ css:
   - _core/syntax.css
   - _core/compositions/*
   - _core/utilities/*
-  - pattern-library/blocks/*
 
 highlights:
   default:

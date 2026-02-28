@@ -1,19 +1,31 @@
 # quiteclose.github.io
 
-Personal website built with [Zine](https://zine-ssg.io/), a Zig-based static site generator.
+Personal website built with Wig, a custom static site generator written in Zig.
 
 ## Development
 
-Start the dev server (live reload):
+Build for development (includes pattern library and draft pages):
 
 ```
-zine
+zig build draft
+```
+
+Start the dev server:
+
+```
+zig build serve
 ```
 
 Build for production:
 
 ```
-zine release
+zig build
 ```
 
-Output goes to `public/`.
+Run tests:
+
+```
+zig build test
+```
+
+Output goes to `zig-out/site/`.

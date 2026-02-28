@@ -1,0 +1,27 @@
+<x-extend template="base.html">
+<x-define slot="head">
+<x-slot name="layout-css" />
+</x-define>
+<x-define slot="body">
+<div class="pattern-library">
+<header class="pattern-library__header">
+<a href="/patterns/">Pattern Library</a>
+<span> / </span>
+<x-var name="page.layout_display_name" />
+</header>
+<div class="pattern-library__body">
+<nav class="pattern-library__nav">
+<ul>
+<x-for link in nav.links>
+<li><a x-var:href="link.url"><x-var name="link.label" /></a></li>
+</x-for>
+</ul>
+</nav>
+<main class="pattern-library__content">
+<h1><x-var name="page.title" /></h1>
+<x-slot name="content" />
+</main>
+</div>
+</div>
+</x-define>
+</x-extend>

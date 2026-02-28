@@ -2,11 +2,11 @@
  * Syntax highlighting
  *
  * Maps the 10 canonical syntax roles to --syntax-* custom properties.
- * Works for both build-time (Zine Tree Sitter) and run-time (LDT) highlighting.
+ * Used by LDT for run-time highlighting in <textarea> elements.
  *
- * Ordering matters: Zine emits multiple classes per span (e.g. "constructor
- * constant variable function"). Equal-specificity selectors resolve by source
- * order, so more semantically meaningful roles appear last to take priority.
+ * Ordering: more semantically meaningful roles appear last so that when
+ * multiple classes apply to the same element, the most specific wins via
+ * source order at equal specificity.
  */
 
 pre code { color: var(--color-text-primary); }

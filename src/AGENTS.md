@@ -16,14 +16,14 @@ This directory contains the custom static site generator for quiteclose.github.i
 zig build          # Release build → zig-out/site/
 zig build draft    # Dev build (pattern library + drafts) → zig-out/site/
 zig build serve    # Dev build then python3 HTTP server on :8080
-zig build test     # Run template engine tests (38 tests)
+zig build test     # Run template engine tests (49 tests)
 ```
 
 ## How a page is rendered
 
-1. `build.zig` compiles `generate.zig` and runs it with: `<layouts_dir> <data_dir> <pages_dir> <assets_dir> <output_dir> <layout_names> [--dev]`
-2. `generate.zig` processes each layout manifest (`layouts/{name}/layout.yaml`), producing CSS bundles (`output/css/{name}.css`) and JS modules (`output/js/{name}.js`)
-3. Templates are loaded into a `Resolver`: `layouts/_core/html/*.html` and `layouts/{name}/html/*.html`
+1. `build.zig` compiles `generate.zig` and runs it with: `<styles_dir> <data_dir> <pages_dir> <assets_dir> <output_dir> <layout_names> [--dev]`
+2. `generate.zig` processes each layout manifest (`styles/{name}/layout.yaml`), producing CSS bundles (`output/css/{name}.css`) and JS modules (`output/js/{name}.js`)
+3. Templates are loaded into a `Resolver`: `styles/_core/html/*.html` and `styles/{name}/html/*.html`
 4. Content pages from `pages/` are read. Each `.html` file has YAML frontmatter (between `---` delimiters) and an HTML body
 5. For each page, a `Context` is created with:
    - `site.*` variables from `data/site.yaml`
@@ -103,6 +103,19 @@ Inserts a variable value. Values are HTML-escaped.
 - If the variable doesn't exist, element form renders nothing; attribute form omits the attribute entirely
 - Variable namespace: `site.*` (from `data/site.yaml`), `page.*` (from frontmatter), `item.*` (from `x-for` loops)
 - Values are always HTML-escaped (`&`, `<`, `>`, `"` become entities)
+
+### `<x-raw>` -- unescaped variable output
+
+Inserts a variable value **without** HTML escaping. Use for pre-rendered HTML fragments (e.g. swatch tables, clamp values in `style` attributes).
+
+```html
+<x-raw name="scheme.swatches" />
+<div style="font-size:<x-raw name="step.clamp" />">Aa</div>
+```
+
+- Same lookup semantics as `<x-var>` (works with `page.*`, `site.*`, loop variables, etc.)
+- If the variable doesn't exist, renders nothing
+- **Only use for values you control.** Never use for user-supplied content.
 
 ### `<x-include>` -- component inclusion
 
@@ -208,7 +221,7 @@ The template engine operates on a `Context` struct with four namespaces:
 
 | Namespace | Type | Set by | Accessed via |
 | --- | --- | --- | --- |
-| `vars` | `string → string` | Build tool (site/page vars), `x-for` (loop vars) | `<x-var>`, `x-var:`, `<x-if var="...">` |
+| `vars` | `string → string` | Build tool (site/page vars), `x-for` (loop vars) | `<x-var>`, `<x-raw>`, `x-var:`, `<x-if var="...">` |
 | `attrs` | `string → string` | `<x-include>` tag attributes | `<x-attr>`, `x-attr:`, `<x-if attr="...">` |
 | `slots` | `string → string` | `<x-define>`, page body (anonymous slot) | `<x-slot>`, `<x-if slot="...">` |
 | `collections` | `string → Entry[]` | Build tool (data lists, page collections) | `<x-for>` |
@@ -257,9 +270,11 @@ The template engine returns typed errors:
 All template elements are tested via inline `test` blocks in `template.zig`. Run with `zig build test` or `zig test src/template.zig`. Tests use `std.testing.allocator` (which detects memory leaks) and cover:
 
 - `x-var`: basic, missing, HTML escaping, dotted path, attribute binding, missing attribute omission (6 tests)
+- `x-raw`: basic, HTML not escaped, missing is empty, in for loop (4 tests)
 - `x-slot`/`x-define`: named, anonymous, default content filled/unfilled, empty unfilled (5 tests)
 - `x-extend`: two-level, three-level chain, circular detection (3 tests)
 - `x-include`/`x-attr`: simple, with body, with attrs, combined, attribute context, nested, circular detection, scope isolation (8 tests)
 - `x-if`/`x-elif`/`x-else`: var exists true/false, equals, not-equals, not-exists, else, elif chain, attr scope, slot scope (9 tests)
 - `x-for`: data list, pages, sorted asc/desc, draft exclusion, nested with shadowing (6 tests)
+- Indentation: simple, multi-line, nested structure, include body, named slots at different levels, zero-level slot, empty content (7 tests)
 - Integration: full page render through 3-level extend chain with includes, variables, loops, and conditionals (1 test)

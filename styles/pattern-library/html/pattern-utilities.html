@@ -1,0 +1,16 @@
+<x-extend template="pattern-library.html">
+<x-define slot="layout-css">
+<link rel="stylesheet" x-var:href="page.layout_css" />
+<link rel="stylesheet" href="/css/patterns.css" />
+</x-define>
+<x-define slot="content">
+<p>Single-purpose utility classes.</p>
+<x-if var="page.has_entries">
+<x-for entry in css.entries>
+<x-raw name="entry.article_html" />
+</x-for>
+</x-if><x-else>
+<p>No utilities configured for this layout.</p>
+</x-else>
+</x-define>
+</x-extend>
