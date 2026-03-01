@@ -1,0 +1,57 @@
+/*
+ * SITE-FOOTER block
+ *
+ * Page bottom chrome with copyright, links, and meta information.
+ * Uses wrapper for max-width and flow for vertical rhythm.
+ *
+ * Usage:
+ *   <x-include template="site-footer.html" />
+ *
+ * Custom properties:
+ *   --site-footer-border  (default: var(--stroke-light))
+ *   --site-footer-padding (default: var(--space-l) 0)
+ *
+ * No exceptions.
+ */
+
+.site-footer {
+  --site-footer-border: var(--stroke-light);
+  --site-footer-padding: var(--space-l) 0;
+
+  padding: var(--site-footer-padding);
+  border-block-start: var(--site-footer-border);
+  margin-block-start: var(--region-space, var(--space-xl));
+}
+
+.site-footer .wrapper {
+  --flow-space: var(--space-xs);
+}
+
+.site-footer__inner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-s);
+}
+
+.site-footer__copyright {
+  font-size: var(--size-step--1);
+  color: var(--color-text-secondary, inherit);
+}
+
+.site-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-s);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: var(--size-step--1);
+}
+
+.site-footer__meta {
+  font-family: var(--font-mono);
+  font-size: var(--size-step--2, 0.75rem);
+  color: var(--color-text-secondary, inherit);
+}

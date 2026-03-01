@@ -1,0 +1,69 @@
+/*
+ * PROSE block
+ *
+ * Configures flow spacing for long-form content. Applied to a container
+ * that wraps authored HTML (articles, tutorials, documentation).
+ * Does not do layout -- configures the flow composition's --flow-space
+ * for different content element types.
+ *
+ * Usage: <article class="prose flow">...</article>
+ *
+ * Custom properties:
+ *   --flow-space  (overridden per element context, default var(--space-l))
+ *
+ * No exceptions.
+ */
+
+.prose {
+  --flow-space: var(--space-l);
+}
+
+.prose :is(h1, h2, h3) {
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+
+.prose :is(p, li, dl, figcaption, blockquote) {
+  max-width: var(--measure, 72ch);
+  text-wrap: pretty;
+}
+
+/* Tighter spacing for elements immediately after headings */
+.prose :is(h1, h2, h3, h4) + *:not([class]) {
+  --flow-space: var(--space-m);
+}
+
+/* More breathing room before headings */
+.prose * + :is(h1, h2, h3, h4):not([class]) {
+  --flow-space: var(--space-xl);
+}
+
+/* Extra space around figures, tables, and code blocks */
+.prose :is(figure, table, pre),
+.prose :is(figure, table, pre) + * {
+  --flow-space: var(--space-2xl);
+}
+
+/* Tight list item spacing */
+.prose :is(ul, ol):not([class]) li + li,
+.prose :is(ul, ol):not([class]) li > :is(ol, ul) {
+  --flow-space: var(--space-2xs);
+}
+
+/* Horizontal rules get extra space */
+.prose hr {
+  --flow-space: var(--space-2xl);
+}
+
+/* Media within prose gets a subtle border */
+.prose :is(img, picture, video) {
+  border: var(--stroke-light);
+  border-radius: var(--radius-s);
+}
+
+@media (min-width: 40em) {
+  .prose :is(h1, h2, h3) {
+    overflow-wrap: unset;
+    hyphens: unset;
+  }
+}

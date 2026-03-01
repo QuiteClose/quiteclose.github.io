@@ -1,0 +1,72 @@
+/*
+ * BUTTON block (shared)
+ *
+ * Styled interactive element. Renders as <button> or <a> depending on
+ * whether an href is provided. Supports multiple visual variants.
+ *
+ * Usage:
+ *   <x-include template="button.html" variant="primary">Subscribe</x-include>
+ *   <x-include template="button.html" variant="ghost" href="/rss">RSS →</x-include>
+ *   <x-include template="button.html" variant="icon-only" aria-label="Search">🔍</x-include>
+ *
+ * Custom properties:
+ *   --button-bg      (default: var(--color-bg-secondary, var(--color-bg-primary)))
+ *   --button-color   (default: currentColor)
+ *   --button-border  (default: var(--stroke))
+ *   --button-padding (default: 0.5em 1.2em)
+ *   --button-radius  (default: var(--radius-s))
+ *
+ * Exceptions:
+ *   data-variant="primary"   -- filled background, inverted text
+ *   data-variant="ghost"     -- transparent background, border only
+ *   data-variant="icon-only" -- square, minimal padding
+ */
+
+.button {
+  --button-bg: var(--color-bg-secondary, var(--color-bg-primary));
+  --button-color: currentColor;
+  --button-border: var(--stroke);
+  --button-padding: 0.5em 1.2em;
+  --button-radius: var(--radius-s);
+
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: var(--button-padding);
+  background: var(--button-bg);
+  color: var(--button-color);
+  border: var(--button-border);
+  border-radius: var(--button-radius);
+  font-family: var(--font-heading, system-ui, sans-serif);
+  font-size: inherit;
+  font-weight: 500;
+  line-height: var(--leading-fine, 1.1);
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter var(--transition-base, 250ms ease);
+}
+
+.button:hover {
+  filter: brightness(1.1);
+}
+
+.button:active {
+  filter: brightness(0.95);
+}
+
+.button[data-variant="primary"] {
+  --button-bg: var(--color-text-primary, currentColor);
+  --button-color: var(--color-bg-primary, #fff);
+  --button-border: 1px solid transparent;
+}
+
+.button[data-variant="ghost"] {
+  --button-bg: transparent;
+  --button-border: var(--stroke);
+}
+
+.button[data-variant="icon-only"] {
+  --button-padding: 0.45em;
+  aspect-ratio: 1;
+  justify-content: center;
+}

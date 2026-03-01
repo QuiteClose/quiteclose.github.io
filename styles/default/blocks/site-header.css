@@ -1,0 +1,65 @@
+/*
+ * SITE-HEADER block
+ *
+ * Top bar containing brand text, subtitle, navigation, and controls
+ * (search, RSS, theme-switcher). Uses wrapper for max-width and
+ * repel to push brand left and controls right.
+ *
+ * Usage:
+ *   <x-include template="site-header.html" />
+ *
+ * Custom properties:
+ *   --site-header-border  (default: var(--stroke-light))
+ *   --site-header-padding (default: var(--space-s) 0)
+ *
+ * No exceptions.
+ */
+
+.site-header {
+  --site-header-border: var(--stroke-light);
+  --site-header-padding: var(--space-s) 0;
+
+  padding: var(--site-header-padding);
+  border-block-end: var(--site-header-border);
+}
+
+.site-header .wrapper {
+  --flow-space: var(--space-xs);
+}
+
+.site-header__inner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-s);
+}
+
+.site-header__brand {
+  font-family: var(--font-display);
+  font-size: var(--size-step-2);
+  font-weight: 700;
+  line-height: var(--leading-fine);
+  text-decoration: none;
+  color: inherit;
+}
+
+.site-header__subtitle {
+  font-family: var(--font-heading);
+  font-size: var(--size-step--1);
+  color: var(--color-text-secondary, inherit);
+  margin: 0;
+}
+
+.site-header__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.site-header__meta {
+  font-family: var(--font-mono);
+  font-size: var(--size-step--2, 0.75rem);
+  color: var(--color-text-secondary, inherit);
+}

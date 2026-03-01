@@ -1,0 +1,58 @@
+/*
+ * NAV block
+ *
+ * Primary navigation links using a cluster layout. Supports
+ * aria-current="page" for active state. Collapses to a vertical
+ * list on narrow viewports; hamburger toggle JS deferred to Phase 4.
+ *
+ * Usage:
+ *   <x-include template="nav.html">
+ *     <x-define slot="items">
+ *       <a href="/guides/">Guides</a>
+ *       <a href="/projects/">Projects</a>
+ *       <a href="/about/" aria-current="page">About</a>
+ *     </x-define>
+ *   </x-include>
+ *
+ * Custom properties:
+ *   --nav-gap       (default: var(--space-s))
+ *   --nav-font-family (default: var(--font-heading))
+ *   --nav-font-size (default: var(--size-step-0))
+ *
+ * Exceptions:
+ *   [aria-current="page"] -- active link styling
+ */
+
+.nav {
+  --nav-gap: var(--space-s);
+  --nav-font-family: var(--font-heading);
+  --nav-font-size: var(--size-step-0);
+}
+
+.nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--nav-gap);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nav a {
+  font-family: var(--nav-font-family);
+  font-size: var(--nav-font-size);
+  text-decoration: none;
+  color: inherit;
+}
+
+.nav a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2lh;
+}
+
+.nav [aria-current="page"] {
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2lh;
+}

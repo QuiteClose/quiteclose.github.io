@@ -1,0 +1,46 @@
+/*
+ * HERO block
+ *
+ * Featured content section with heading, subtitle/description, and
+ * an optional image. Uses the sidebar composition for text-left,
+ * image-right layout that stacks on narrow viewports.
+ *
+ * Usage:
+ *   <x-include template="hero.html" title="Writing maintainable shell scripts."
+ *     image="/assets/img/hero.webp" image-alt="Terminal illustration">
+ *     Evergreen guides for writing clean scripts.
+ *   </x-include>
+ *
+ * Custom properties:
+ *   --hero-gap             (default: var(--gutter))
+ *   --hero-image-min-width (default: 280px)
+ *
+ * No exceptions.
+ */
+
+.hero {
+  --hero-gap: var(--gutter);
+  --hero-image-min-width: 280px;
+}
+
+.hero > .sidebar {
+  --sidebar-target-width: var(--hero-image-min-width);
+  --gutter: var(--hero-gap);
+  align-items: center;
+}
+
+.hero h1 {
+  max-width: 20ch;
+}
+
+.hero .hero__desc {
+  max-width: var(--measure, 72ch);
+  font-size: var(--size-step-1);
+  color: var(--color-text-secondary, inherit);
+}
+
+.hero img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-m);
+}

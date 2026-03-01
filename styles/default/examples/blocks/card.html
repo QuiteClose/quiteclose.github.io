@@ -1,0 +1,28 @@
+<h3>Series card</h3>
+<x-include template="card.html" type="series" title="The Terminal Habit" parts="8" href="/terminal-habit/">
+  <x-define slot="tags">
+    <x-include template="tag.html" label="linux" />
+    <x-include template="tag.html" label="terminal" />
+    <x-include template="tag.html" label="bash" />
+  </x-define>
+  Mastery of shells, pipes, awk, and grep through daily practice and structured learning.
+</x-include>
+
+<h3>Guide card</h3>
+<x-include template="card.html" type="guide" title="Writing Maintainable Shell Scripts" href="/shell-scripts/">
+  <x-define slot="tags">
+    <x-include template="tag.html" label="bash" />
+    <x-include template="tag.html" label="scripting" />
+  </x-define>
+  Evergreen guides for writing clean, portable shell scripts that your future self will thank you for.
+</x-include>
+
+<h3>Opinion card (no tags)</h3>
+<x-include template="card.html" type="opinion" title="Why I Dropped SASS" href="/dropped-sass/">
+  Plain CSS custom properties do everything SASS variables did, without the build step.
+</x-include>
+
+<h3>Card without type</h3>
+<x-include template="card.html" title="Quick Note" href="/quick-note/">
+  A short post without a category classification.
+</x-include>

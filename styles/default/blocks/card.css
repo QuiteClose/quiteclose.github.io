@@ -1,0 +1,80 @@
+/*
+ * CARD block
+ *
+ * Article listing entry with structured content: type label, title,
+ * description, metadata, and tags. Each card links to its content.
+ *
+ * Usage:
+ *   <x-include template="card.html" type="series" title="The Terminal Habit"
+ *     parts="8" href="/terminal-habit/">
+ *     <x-define slot="tags">
+ *       <x-include template="tag.html" label="linux" />
+ *     </x-define>
+ *     mastery of shells, pipes, awk, and grep
+ *   </x-include>
+ *
+ * Custom properties:
+ *   --card-flow-space (default: var(--space-2xs))
+ *   --card-border     (default: var(--stroke-light))
+ *   --card-padding    (default: var(--space-s))
+ *
+ * Exceptions:
+ *   data-type="series|guide|opinion" -- type indicator colour
+ */
+
+.card {
+  --card-flow-space: var(--space-2xs);
+  --card-border: var(--stroke-light);
+  --card-padding: var(--space-s);
+  --flow-space: var(--card-flow-space);
+
+  padding: var(--card-padding);
+  border: var(--card-border);
+  border-radius: var(--radius-s);
+}
+
+.card > a {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.card > a:hover .card__title {
+  text-decoration: underline;
+  text-underline-offset: 0.2ex;
+}
+
+.card__type {
+  font-family: var(--font-mono);
+  font-size: var(--size-step--1);
+  text-transform: uppercase;
+  letter-spacing: var(--uppercase-kerning, 0.04ch);
+  color: var(--color-text-secondary, inherit);
+}
+
+.card__title {
+  font-family: var(--font-heading);
+  font-size: var(--size-step-1);
+  font-weight: 700;
+  line-height: var(--leading-heading);
+}
+
+.card__meta {
+  font-size: var(--size-step--1);
+  color: var(--color-text-secondary, inherit);
+}
+
+.card__desc {
+  max-width: var(--measure, 72ch);
+}
+
+.card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3xs);
+  margin-block-start: var(--space-xs);
+}
+
+.card[data-type="series"] .card__type { color: var(--syntax-function, inherit); }
+.card[data-type="guide"] .card__type { color: var(--syntax-string, inherit); }
+.card[data-type="opinion"] .card__type { color: var(--syntax-keyword, inherit); }

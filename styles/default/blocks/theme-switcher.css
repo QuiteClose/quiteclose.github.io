@@ -1,0 +1,184 @@
+/*
+ * THEME-SWITCHER block
+ *
+ * Light/dark toggle and scheme selector drawer. The toggle switches
+ * between light and dark mode for the current scheme. The drawer
+ * expands to show all available schemes.
+ *
+ * Usage:
+ *   <x-include template="theme-switcher.html" />
+ *
+ * Custom properties:
+ *   --switcher-toggle-bg  (default: var(--color-bg-secondary, var(--color-bg-primary)))
+ *   --switcher-drawer-bg  (default: var(--color-bg-secondary, var(--color-bg-primary)))
+ *   --switcher-swatch-size (default: 2rem)
+ *
+ * Exceptions:
+ *   data-state="open" -- drawer expanded
+ */
+
+.theme-switcher {
+  --switcher-toggle-bg: var(--color-bg-secondary, var(--color-bg-primary));
+  --switcher-drawer-bg: var(--color-bg-secondary, var(--color-bg-primary));
+  --switcher-swatch-size: 2rem;
+
+  position: relative;
+}
+
+.theme-switcher__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+
+/* Dark/light toggle */
+.theme-switcher__toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 3.2em;
+  height: 1.8em;
+  padding: 0;
+  border: var(--stroke);
+  border-radius: var(--radius-l);
+  background: var(--switcher-toggle-bg);
+  cursor: pointer;
+  font-size: inherit;
+}
+
+.theme-switcher__toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.theme-switcher__toggle .slider {
+  position: absolute;
+  inset: 2px;
+  border-radius: inherit;
+  transition: background var(--transition-base);
+}
+
+.theme-switcher__toggle .slider::before {
+  content: "";
+  position: absolute;
+  width: 1.2em;
+  height: 1.2em;
+  inset-block-start: 50%;
+  inset-inline-start: 2px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: currentColor;
+  transition: transform var(--transition-movement);
+}
+
+.theme-switcher__toggle input:checked ~ .slider::before {
+  transform: translateY(-50%) translateX(1.4em);
+}
+
+.theme-switcher__toggle .icon {
+  position: absolute;
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+  font-size: 0.85em;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.theme-switcher__toggle .icon-light {
+  inset-inline-start: 0.3em;
+}
+
+.theme-switcher__toggle .icon-dark {
+  inset-inline-end: 0.3em;
+}
+
+/* Scheme selector button (3x3 grid preview) */
+.theme-switcher__expand {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  width: var(--switcher-swatch-size);
+  height: var(--switcher-swatch-size);
+  padding: 2px;
+  border: var(--stroke);
+  border-radius: var(--radius-s);
+  background: var(--switcher-toggle-bg);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.theme-switcher__expand > span {
+  border-radius: 1px;
+}
+
+/* Drawer panel */
+.theme-switcher__drawer {
+  display: none;
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-start: 100%;
+  z-index: 10;
+  margin-block-start: var(--space-2xs);
+  padding: var(--space-s);
+  background: var(--switcher-drawer-bg);
+  border: var(--stroke);
+  border-radius: var(--radius-s);
+  min-width: 14rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.theme-switcher[data-state="open"] .theme-switcher__drawer {
+  display: block;
+}
+
+.theme-switcher__drawer ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.theme-switcher__option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-2xs) var(--space-xs);
+  border: 1px solid transparent;
+  border-radius: var(--radius-s);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--size-step--1);
+  cursor: pointer;
+  width: 100%;
+  text-align: start;
+}
+
+.theme-switcher__option:hover {
+  border-color: currentColor;
+}
+
+.theme-switcher__option[aria-pressed="true"] {
+  font-weight: 700;
+  border-color: currentColor;
+}
+
+.theme-switcher__swatch {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  width: 1.5em;
+  height: 1.5em;
+  flex-shrink: 0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.theme-switcher__swatch > span {
+  border-radius: 1px;
+}
