@@ -1,0 +1,19 @@
+/*
+ * TEXT SIZE utilities
+ * Apply fluid type scale steps to any element.
+ * Wrapped in :where() to keep specificity at zero,
+ * so blocks can override without fighting.
+ *
+ * Custom properties referenced:
+ *   --size-step--2 .. --size-step-5  (generated from layout.yaml)
+ *
+ * Usage: <p class="text-step-3">Large text</p>
+ */
+:where(.text-step-5)  { font-size: var(--size-step-5); }
+:where(.text-step-4)  { font-size: var(--size-step-4); }
+:where(.text-step-3)  { font-size: var(--size-step-3); }
+:where(.text-step-2)  { font-size: var(--size-step-2); }
+:where(.text-step-1)  { font-size: var(--size-step-1); }
+:where(.text-step-0)  { font-size: var(--size-step-0); }
+:where(.text-step--1) { font-size: var(--size-step--1); }
+:where(.text-step--2) { font-size: var(--size-step--2); }
