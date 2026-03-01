@@ -6,18 +6,26 @@
 <x-define slot="content">
 <x-if var="page.has_tokens">
 <table class="patterns__tokens">
-<thead><tr><th>Step</th><th>Property</th><th>Min</th><th>Max</th><th>Sample</th></tr></thead>
-<tbody>
-<x-for step in typography.steps>
-<tr>
-<td><x-var name="step.step" /></td>
-<td><code><x-var name="step.property" /></code></td>
-<td><x-var name="step.min_px" /></td>
-<td><x-var name="step.max_px" /></td>
-<td><span style="font-size:<x-raw name="step.clamp" />">Aa</span></td>
-</tr>
-</x-for>
-</tbody>
+  <thead>
+    <tr>
+      <th>Step</th>
+      <th>Property</th>
+      <th>Min</th>
+      <th>Max</th>
+      <th>Sample</th>
+    </tr>
+  </thead>
+  <tbody>
+    <x-for step in typography.steps>
+    <tr>
+      <td><x-var name="step.step" /></td>
+      <td><code><x-var name="step.property" /></code></td>
+      <td><x-var name="step.min_px" /></td>
+      <td><x-var name="step.max_px" /></td>
+      <td><span style="font-size:<x-raw name="step.clamp" />">Aa</span></td>
+    </tr>
+    </x-for>
+  </tbody>
 </table>
 <x-else />
 <p>No typography configuration.</p>

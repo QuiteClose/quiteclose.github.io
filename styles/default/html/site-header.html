@@ -1,21 +1,21 @@
 <header class="site-header">
-<div class="wrapper flow">
-<div class="site-header__inner">
-<div>
-<a href="/" class="site-header__brand"><x-var name="site.title">@QuiteClose</x-var></a>
-<p class="site-header__subtitle"><x-var name="site.subtitle">Technical articles, tutorials, and experiments.</x-var></p>
-</div>
-<div class="site-header__controls">
-<x-include template="nav.html">
-<x-define slot="items">
-<li><a href="/guides/">Guides</a></li>
-<li><a href="/projects/">Projects</a></li>
-<li><a href="/opinions/">Opinions</a></li>
-<li><a href="/about/">About</a></li>
-</x-define>
-</x-include>
-<x-include template="button.html" variant="ghost" href="/rss">RSS →</x-include>
-</div>
-</div>
-</div>
+  <div class="wrapper flow">
+    <div class="site-header__inner">
+      <div>
+        <a href="/" class="site-header__brand"><x-var name="site.title">@QuiteClose</x-var></a>
+        <p class="site-header__subtitle"><x-var name="site.subtitle">Technical articles, tutorials, and experiments.</x-var></p>
+      </div>
+      <div class="site-header__controls">
+        <x-include template="nav.html">
+        <x-define slot="items">
+        <li><a href="/guides/">Guides</a></li>
+        <li><a href="/projects/">Projects</a></li>
+        <li><a href="/opinions/">Opinions</a></li>
+        <li><a href="/about/">About</a></li>
+        </x-define>
+        </x-include>
+        <x-include template="button.html" variant="ghost" href="/rss">RSS →</x-include>
+      </div>
+    </div>
+  </div>
 </header>

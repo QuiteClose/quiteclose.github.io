@@ -1,9 +1,11 @@
 <article class="card flow" x-attr:data-type="type">
-<a x-attr:href="href">
-<x-if attr="type" exists><p class="card__type"><x-attr name="type" /></p></x-if>
-<h3 class="card__title"><x-attr name="title" /></h3>
-<x-if attr="parts" exists><p class="card__meta"><x-attr name="parts" /> parts</p></x-if>
-<p class="card__desc"><x-slot /></p>
-</a>
-<x-if slot="tags"><div class="card__tags"><x-slot name="tags" /></div></x-if>
+  <a x-attr:href="href">
+    <x-if attr="type" exists><p class="card__type"><x-attr name="type" /></p></x-if>
+    <h3 class="card__title"><x-attr name="title" /></h3>
+    <x-if attr="parts" exists><p class="card__meta"><x-attr name="parts" /> parts</p></x-if>
+    <p class="card__desc"><x-slot /></p>
+  </a>
+  <x-if slot="tags">
+  <div class="card__tags"><x-slot name="tags" /></div>
+  </x-if>
 </article>

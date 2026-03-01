@@ -5,17 +5,17 @@
 </x-define>
 <x-define slot="body">
 <div class="pattern-library">
-<header class="pattern-library__header">
-<span>Pattern Library</span>
-</header>
-<main class="pattern-library__content">
-<h1><x-var name="page.title" /></h1>
-<ul>
-<x-for layout in layouts>
-<li><a x-var:href="layout.url"><x-var name="layout.label" /></a></li>
-</x-for>
-</ul>
-</main>
+  <header class="pattern-library__header">
+    <span>Pattern Library</span>
+  </header>
+  <main class="pattern-library__content">
+    <h1><x-var name="page.title" /></h1>
+    <ul>
+      <x-for layout in layouts>
+      <li><a x-var:href="layout.url"><x-var name="layout.label" /></a></li>
+      </x-for>
+    </ul>
+  </main>
 </div>
 </x-define>
 </x-extend>

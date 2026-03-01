@@ -1,1 +1,5 @@
-<x-if attr="href" exists><a class="button" x-attr:href="href" x-attr:data-variant="variant" x-attr:aria-label="aria-label"><x-slot /></a><x-else /><button class="button" x-attr:type="type" x-attr:data-variant="variant" x-attr:aria-label="aria-label"><x-slot /></button></x-if>
+<x-if attr="href" exists>
+<a class="button" x-attr:href="href" x-attr:data-variant="variant" x-attr:aria-label="aria-label"><x-slot /></a>
+<x-else />
+<button class="button" x-attr:type="type" x-attr:data-variant="variant" x-attr:aria-label="aria-label"><x-slot /></button>
+</x-if>

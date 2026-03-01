@@ -1,11 +1,11 @@
 <section class="hero">
-<div class="sidebar">
-<div class="flow">
-<h1><x-attr name="title" /></h1>
-<p class="hero__desc"><x-slot /></p>
-</div>
-<x-if attr="image" exists>
-<img x-attr:src="image" x-attr:alt="image-alt" loading="lazy" />
-</x-if>
-</div>
+  <div class="sidebar">
+    <div class="flow">
+      <h1><x-attr name="title" /></h1>
+      <p class="hero__desc"><x-slot /></p>
+    </div>
+    <x-if attr="image" exists>
+    <img x-attr:src="image" x-attr:alt="image-alt" loading="lazy" />
+    </x-if>
+  </div>
 </section>

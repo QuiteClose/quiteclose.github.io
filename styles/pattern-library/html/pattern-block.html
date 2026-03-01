@@ -6,25 +6,25 @@
 <x-define slot="content">
 <x-if var="block.description"><p><x-var name="block.description" /></p></x-if>
 <div class="flow">
-<iframe class="pattern-library__preview-frame" x-var:src="block.preview_url"></iframe>
-<p><a x-var:href="block.preview_url">View full screen</a></p>
-<x-if var="block.has_example">
-<details>
-<summary>Source (Wig template)</summary>
-<pre><code><x-var name="block.example_src" /></code></pre>
-</details>
-</x-if>
+  <iframe class="pattern-library__preview-frame" x-var:src="block.preview_url"></iframe>
+  <p><a x-var:href="block.preview_url">View full screen</a></p>
+  <x-if var="block.has_example">
+  <details>
+    <summary>Source (Wig template)</summary>
+    <pre><code><x-var name="block.example_src" /></code></pre>
+  </details>
+  </x-if>
 </div>
 <x-if var="block.has_properties">
 <article class="flow">
-<h2>Custom properties</h2>
-<x-raw name="block.properties_html" />
+  <h2>Custom properties</h2>
+  <x-raw name="block.properties_html" />
 </article>
 </x-if>
 <x-if var="block.has_exceptions">
 <article class="flow">
-<h2>Exceptions</h2>
-<x-raw name="block.exceptions_html" />
+  <h2>Exceptions</h2>
+  <x-raw name="block.exceptions_html" />
 </article>
 </x-if>
 <x-if var="block.has_url">

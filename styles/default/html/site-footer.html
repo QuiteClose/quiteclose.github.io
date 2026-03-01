@@ -1,14 +1,14 @@
 <footer class="site-footer">
-<div class="wrapper flow">
-<div class="site-footer__inner">
-<p class="site-footer__copyright">© <x-var name="site.title">QuiteClose</x-var></p>
-<ul class="site-footer__links" role="list">
-<li><a href="/about/">About</a></li>
-<li><a href="/rss">RSS</a></li>
-</ul>
-</div>
-<x-if var="site.generator" exists>
-<p class="site-footer__meta">Built with <x-var name="site.generator" /></p>
-</x-if>
-</div>
+  <div class="wrapper flow">
+    <div class="site-footer__inner">
+      <p class="site-footer__copyright">© <x-var name="site.title">QuiteClose</x-var></p>
+      <ul class="site-footer__links" role="list">
+        <li><a href="/about/">About</a></li>
+        <li><a href="/rss">RSS</a></li>
+      </ul>
+    </div>
+    <x-if var="site.generator" exists>
+    <p class="site-footer__meta">Built with <x-var name="site.generator" /></p>
+    </x-if>
+  </div>
 </footer>
