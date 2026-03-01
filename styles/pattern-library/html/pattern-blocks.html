@@ -6,9 +6,11 @@
 <x-define slot="content">
 <p>Site-specific blocks: styled components with custom property APIs and data-attribute exceptions.</p>
 <x-if var="page.has_entries">
-<x-for entry in css.entries>
-<x-raw name="entry.article_html" />
+<ul class="pattern-listing" role="list">
+<x-for entry in blocks.entries>
+<li><a x-var:href="entry.url"><x-var name="entry.label" /></a></li>
 </x-for>
+</ul>
 <x-else />
 <p>No blocks configured for this layout.</p>
 </x-if>

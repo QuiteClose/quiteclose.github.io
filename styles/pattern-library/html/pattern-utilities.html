@@ -7,7 +7,24 @@
 <p>Single-purpose utility classes.</p>
 <x-if var="page.has_entries">
 <x-for entry in css.entries>
-<x-raw name="entry.article_html" />
+<article class="pattern" x-var:id="entry.basename">
+<h2><x-var name="entry.name" /></h2>
+<x-if var="entry.description"><p><x-var name="entry.description" /></p></x-if>
+<x-if var="entry.has_url"><p><a x-var:href="entry.ref_url">Reference</a></p></x-if>
+<x-if var="entry.has_properties">
+<h3>Custom properties</h3>
+<x-raw name="entry.properties_html" />
+</x-if>
+<x-if var="entry.has_exceptions">
+<h3>Exceptions</h3>
+<x-raw name="entry.exceptions_html" />
+</x-if>
+<x-if var="entry.has_example">
+<h3>Example</h3>
+<div class="pattern__preview"><x-raw name="entry.example_src" /></div>
+<details><summary>Source</summary><pre><code><x-var name="entry.example_src" /></code></pre></details>
+</x-if>
+</article>
 </x-for>
 <x-else />
 <p>No utilities configured for this layout.</p>

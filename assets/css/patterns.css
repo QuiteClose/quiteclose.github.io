@@ -232,6 +232,47 @@
   border-radius: 2px;
 }
 
+/* Iframe preview for block detail pages */
+
+.pattern-library__preview-frame {
+  width: 100%;
+  border: 1px solid var(--pl-border, #ddd);
+  min-height: 25rem;
+  resize: vertical;
+  border-radius: 4px;
+  background: var(--pl-bg, var(--color-bg-primary, #fff));
+}
+
+/* Block listing page */
+
+.pattern-listing {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pattern-listing li + li {
+  margin-block-start: var(--space-xs, 0.5rem);
+}
+
+.pattern-listing a {
+  font-size: var(--size-step-1, 1.25rem);
+  color: var(--pl-accent, var(--color-text-link, #06c));
+  text-decoration: none;
+}
+
+.pattern-listing a:hover {
+  text-decoration: underline;
+}
+
+/* Nav grouping */
+
+.pattern-library__nav hr {
+  border: none;
+  border-block-start: 1px solid var(--pl-border, #ddd);
+  margin-block: var(--space-s, 0.75rem);
+}
+
 /* Responsive: stack nav under header on narrow viewports */
 
 @media (max-width: 40rem) {
