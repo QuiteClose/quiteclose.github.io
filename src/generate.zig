@@ -1182,6 +1182,7 @@ fn buildNavLinks(a: Allocator, ln: []const u8) std.ArrayList(template.Entry) {
     addNavLink(a, &nav, "Global Styles", std.fmt.allocPrint(a, "/patterns/{s}/css/globals/", .{ln}) catch @panic("OOM"));
     addNavLink(a, &nav, "Compositions", std.fmt.allocPrint(a, "/patterns/{s}/css/compositions/", .{ln}) catch @panic("OOM"));
     addNavLink(a, &nav, "Utilities", std.fmt.allocPrint(a, "/patterns/{s}/css/utilities/", .{ln}) catch @panic("OOM"));
+    addNavLink(a, &nav, "Blocks", std.fmt.allocPrint(a, "/patterns/{s}/css/blocks/", .{ln}) catch @panic("OOM"));
     return nav;
 }
 
@@ -1483,6 +1484,21 @@ fn generatePatternLibrary(
         }
         const path = try std.fmt.allocPrint(a, "{s}/patterns/{s}/css/utilities/index.html", .{ output_dir_path, layout_name });
         renderPatternTemplate(a, "pattern-utilities.html", path, &ctx, resolver);
+    }
+
+    // Blocks page
+    {
+        var ctx = buildPatternContext(a, layout_name, display_name, site_conf);
+        ctx.putVar(a, "page.title", "Blocks") catch @panic("OOM");
+        if (manifest.get("css")) |css_list| {
+            const entries = try buildPatternEntries(a, styles_dir, css_list, "blocks");
+            if (entries.len > 0) {
+                ctx.putVar(a, "page.has_entries", "true") catch @panic("OOM");
+                ctx.putCollection(a, "css.entries", entries) catch @panic("OOM");
+            }
+        }
+        const path = try std.fmt.allocPrint(a, "{s}/patterns/{s}/css/blocks/index.html", .{ output_dir_path, layout_name });
+        renderPatternTemplate(a, "pattern-blocks.html", path, &ctx, resolver);
     }
 }
 

@@ -1,0 +1,16 @@
+<x-extend template="pattern-library.html">
+<x-define slot="layout-css">
+<link rel="stylesheet" x-var:href="page.layout_css" />
+<link rel="stylesheet" href="/css/patterns.css" />
+</x-define>
+<x-define slot="content">
+<p>Site-specific blocks: styled components with custom property APIs and data-attribute exceptions.</p>
+<x-if var="page.has_entries">
+<x-for entry in css.entries>
+<x-raw name="entry.article_html" />
+</x-for>
+<x-else />
+<p>No blocks configured for this layout.</p>
+</x-if>
+</x-define>
+</x-extend>
