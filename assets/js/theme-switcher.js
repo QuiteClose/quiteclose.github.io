@@ -117,15 +117,25 @@
     }
   }
 
+  function enableTransitions() {
+    setTimeout(function () {
+      document.body.classList.add("colors-loaded");
+    }, 100);
+  }
+
   function init() {
+    var savedScheme = getSavedScheme();
+    var savedMode = getSavedMode();
+
+    if (savedScheme) {
+      var mode = savedMode || detectPreferredMode();
+      document.body.setAttribute("data-theme", savedScheme + "-" + mode);
+    }
+
     var toggle = document.getElementById("dark-mode-toggle");
     if (toggle) {
       toggle.addEventListener("change", toggleMode);
-    }
-
-    var drawerBtn = document.getElementById("theme-drawer-toggle");
-    if (drawerBtn) {
-      drawerBtn.addEventListener("click", toggleDrawer);
+      if (savedMode) toggle.checked = savedMode === "dark";
     }
 
     document.addEventListener("click", handleClickOutside);
@@ -138,6 +148,11 @@
       window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", handleMediaChange);
     }
 
+    var drawerBtn = document.getElementById("theme-drawer-toggle");
+    if (drawerBtn) {
+      drawerBtn.addEventListener("click", toggleDrawer);
+    }
+
     fetch("/js/default.js")
       .then(function (r) { return r.text(); })
       .then(function (text) {
@@ -145,10 +160,11 @@
         if (!match) return;
         config = new Function("return " + match[1])();
         buildSchemeList(config.schemes);
-        var scheme = getSavedScheme() || config.default.scheme;
-        var mode = getSavedMode() || detectPreferredMode();
+        var scheme = savedScheme || config.default.scheme;
+        var mode = savedMode || detectPreferredMode();
         applyTheme(scheme, mode);
         ready = true;
+        enableTransitions();
       });
   }
 
