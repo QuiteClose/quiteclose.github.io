@@ -1,0 +1,24 @@
+/*
+ * TEXT COLOUR utilities
+ * Apply colour scheme roles to text and backgrounds.
+ * Wrapped in :where() to keep specificity at zero,
+ * so blocks can override without fighting.
+ *
+ * Custom properties referenced:
+ *   --color-text-*  (generated from colour scheme YAML)
+ *   --color-bg-*    (generated from colour scheme YAML)
+ *
+ * Usage: <span class="text-secondary">Muted caption</span>
+ */
+
+/* Text colours */
+:where(.text-primary)   { color: var(--color-text-primary); }
+:where(.text-secondary) { color: var(--color-text-secondary); }
+:where(.text-emphasis)  { color: var(--color-text-emphasis); }
+:where(.text-heading)   { color: var(--color-text-heading); }
+:where(.text-link)      { color: var(--color-text-link); }
+
+/* Background colours */
+:where(.bg-primary)   { background: var(--color-bg-primary); }
+:where(.bg-secondary) { background: var(--color-bg-secondary); }
+:where(.bg-embed)     { background: var(--color-bg-embed); }

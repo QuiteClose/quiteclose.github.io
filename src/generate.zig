@@ -1179,6 +1179,7 @@ fn buildNavLinks(a: Allocator, ln: []const u8) std.ArrayList(template.Entry) {
     addNavLink(a, &nav, "Colour", std.fmt.allocPrint(a, "/patterns/{s}/tokens/colour/", .{ln}) catch @panic("OOM"));
     addNavLink(a, &nav, "Typography", std.fmt.allocPrint(a, "/patterns/{s}/tokens/typography/", .{ln}) catch @panic("OOM"));
     addNavLink(a, &nav, "Spacing", std.fmt.allocPrint(a, "/patterns/{s}/tokens/spacing/", .{ln}) catch @panic("OOM"));
+    addNavLink(a, &nav, "Global Styles", std.fmt.allocPrint(a, "/patterns/{s}/css/globals/", .{ln}) catch @panic("OOM"));
     addNavLink(a, &nav, "Compositions", std.fmt.allocPrint(a, "/patterns/{s}/css/compositions/", .{ln}) catch @panic("OOM"));
     addNavLink(a, &nav, "Utilities", std.fmt.allocPrint(a, "/patterns/{s}/css/utilities/", .{ln}) catch @panic("OOM"));
     return nav;
@@ -1444,6 +1445,14 @@ fn generatePatternLibrary(
 
         const path = try std.fmt.allocPrint(a, "{s}/patterns/{s}/tokens/spacing/index.html", .{ output_dir_path, layout_name });
         renderPatternTemplate(a, "pattern-spacing.html", path, &ctx, resolver);
+    }
+
+    // Global Styles page
+    {
+        var ctx = buildPatternContext(a, layout_name, display_name, site_conf);
+        ctx.putVar(a, "page.title", "Global Styles") catch @panic("OOM");
+        const path = try std.fmt.allocPrint(a, "{s}/patterns/{s}/css/globals/index.html", .{ output_dir_path, layout_name });
+        renderPatternTemplate(a, "pattern-globals.html", path, &ctx, resolver);
     }
 
     // Compositions page
