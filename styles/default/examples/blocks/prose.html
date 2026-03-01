@@ -1,0 +1,58 @@
+<article class="prose flow">
+  <h2>A Prose Example</h2>
+  <p>The prose block configures flow spacing for long-form content. It does not do
+    layout itself — it sets <code>--flow-space</code> for different element types
+    within a <code>flow</code> composition.</p>
+  <p>Paragraphs are constrained to <code>--measure</code> width and use
+    <code>text-wrap: pretty</code> for better line breaking.</p>
+
+  <h3>Subheading with tighter follow-on spacing</h3>
+  <p>The element immediately after a heading gets reduced spacing via
+    <code>--space-m</code> instead of the default <code>--space-l</code>.</p>
+
+  <h4>Lists</h4>
+  <ul>
+    <li>List items have tight spacing between them.</li>
+    <li>Nested lists are also tight.</li>
+    <li>This keeps lists compact and readable.</li>
+  </ul>
+
+  <ol>
+    <li>Ordered lists behave the same way.</li>
+    <li>Consistent vertical rhythm throughout.</li>
+  </ol>
+
+  <h4>Blockquote</h4>
+  <blockquote>
+    <p>Good CSS is pragmatic, deliberate, and effective. It works with the
+      browser, not against it.</p>
+    <footer>— Andy Bell, <cite>Complete CSS</cite></footer>
+  </blockquote>
+
+  <h4>Code</h4>
+  <p>Inline code like <code>var(--flow-space)</code> is styled by global styles.
+    Code blocks get extra vertical space:</p>
+  <pre><code>function greet(name) {
+  return `Hello, ${name}!`;
+}</code></pre>
+  <p>The paragraph after a code block also gets extra space.</p>
+
+  <h4>Table</h4>
+  <table>
+    <thead>
+      <tr><th>Property</th><th>Default</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>--flow-space</code></td><td><code>--space-l</code></td><td>Base vertical rhythm</td></tr>
+      <tr><td><code>--measure</code></td><td><code>72ch</code></td><td>Max line length</td></tr>
+    </tbody>
+  </table>
+
+  <hr>
+
+  <h4>Figure</h4>
+  <figure>
+    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='200'%3E%3Crect fill='%23ddd' width='600' height='200'/%3E%3Ctext x='300' y='100' text-anchor='middle' dominant-baseline='central' fill='%23666'%3EPlaceholder Image%3C/text%3E%3C/svg%3E" alt="Placeholder image">
+    <figcaption>Figure 1: Images in prose get a subtle border and radius.</figcaption>
+  </figure>
+</article>

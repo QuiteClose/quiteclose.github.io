@@ -1,0 +1,83 @@
+/*
+ * CALLOUT block
+ *
+ * Informational box for tips, warnings, notes, and danger messages.
+ * Applied to <aside> or <div> with a data-type attribute.
+ * Content is authored inline -- no template needed.
+ *
+ * Usage:
+ *   <aside class="callout" data-type="tip">
+ *     <p>Helpful tip content here.</p>
+ *   </aside>
+ *
+ * Custom properties:
+ *   --callout-bg            (default: var(--color-bg-secondary, var(--color-bg-primary)))
+ *   --callout-border-color  (default: currentColor)
+ *   --callout-icon-color    (default: currentColor)
+ *   --callout-padding       (default: var(--space-s))
+ *
+ * Exceptions:
+ *   data-type="tip"     -- green-tinted border/icon (diamond ◆)
+ *   data-type="warning" -- amber-tinted border/icon (triangle ▲)
+ *   data-type="note"    -- blue-tinted border/icon (circle ●)
+ *   data-type="danger"  -- red-tinted border/icon (square ■)
+ */
+
+.callout {
+  --callout-bg: var(--color-bg-secondary, var(--color-bg-primary));
+  --callout-border-color: currentColor;
+  --callout-icon-color: currentColor;
+  --callout-padding: var(--space-s);
+
+  position: relative;
+  padding: var(--callout-padding);
+  padding-inline-start: calc(var(--callout-padding) * 2.5);
+  background: var(--callout-bg);
+  border-inline-start: 3px solid var(--callout-border-color);
+  border-radius: var(--radius-s);
+}
+
+.callout::before {
+  position: absolute;
+  inset-inline-start: var(--space-2xs);
+  inset-block-start: var(--callout-padding);
+  color: var(--callout-icon-color);
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+.callout[data-type="tip"] {
+  --callout-border-color: #2d9574;
+  --callout-icon-color: #2d9574;
+}
+
+.callout[data-type="tip"]::before {
+  content: "◆";
+}
+
+.callout[data-type="warning"] {
+  --callout-border-color: #b58900;
+  --callout-icon-color: #b58900;
+}
+
+.callout[data-type="warning"]::before {
+  content: "▲";
+}
+
+.callout[data-type="note"] {
+  --callout-border-color: #268bd2;
+  --callout-icon-color: #268bd2;
+}
+
+.callout[data-type="note"]::before {
+  content: "●";
+}
+
+.callout[data-type="danger"] {
+  --callout-border-color: #dc322f;
+  --callout-icon-color: #dc322f;
+}
+
+.callout[data-type="danger"]::before {
+  content: "■";
+}

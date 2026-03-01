@@ -1,0 +1,26 @@
+<h3>Basic tags</h3>
+<div class="cluster">
+  <x-include template="tag.html" label="linux" />
+  <x-include template="tag.html" label="terminal" />
+  <x-include template="tag.html" label="programming" />
+</div>
+
+<h3>Tags with count</h3>
+<div class="cluster">
+  <x-include template="tag.html" label="kubernetes" count="2" />
+  <x-include template="tag.html" label="docker" count="5" />
+  <x-include template="tag.html" label="zig" count="1" />
+</div>
+
+<h3>Tag as link</h3>
+<div class="cluster">
+  <x-include template="tag.html" label="linux" href="/topics/linux/" />
+  <x-include template="tag.html" label="css" href="/topics/css/" count="3" />
+</div>
+
+<h3>Active variant</h3>
+<div class="cluster">
+  <x-include template="tag.html" label="all" variant="active" />
+  <x-include template="tag.html" label="linux" />
+  <x-include template="tag.html" label="terminal" />
+</div>

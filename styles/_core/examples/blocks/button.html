@@ -1,0 +1,24 @@
+<h3>Default button</h3>
+<x-include template="button.html">Default</x-include>
+
+<h3>Primary variant</h3>
+<x-include template="button.html" variant="primary">Subscribe</x-include>
+
+<h3>Ghost variant</h3>
+<x-include template="button.html" variant="ghost">Learn more</x-include>
+
+<h3>Button as link</h3>
+<x-include template="button.html" variant="ghost" href="/rss">RSS →</x-include>
+
+<h3>Icon-only variant</h3>
+<div class="cluster">
+  <x-include template="button.html" variant="icon-only" aria-label="Search">🔍</x-include>
+  <x-include template="button.html" variant="icon-only" aria-label="Menu">☰</x-include>
+  <x-include template="button.html" variant="icon-only" aria-label="Copy">📋</x-include>
+</div>
+
+<h3>Button group</h3>
+<div class="cluster">
+  <x-include template="button.html" variant="primary">Save</x-include>
+  <x-include template="button.html" variant="ghost">Cancel</x-include>
+</div>

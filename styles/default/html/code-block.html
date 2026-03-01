@@ -1,0 +1,11 @@
+<div class="code-block" x-attr:data-mode="mode" x-attr:data-language="language">
+<header>
+<x-if attr="filename" exists><span><x-attr name="filename" /></span><x-else /><x-if attr="language" exists><span><x-attr name="language" /></span></x-if></x-if>
+<button type="button" data-action="copy" aria-label="Copy code">Copy</button>
+</header>
+<x-if attr="mode" equals="live">
+<textarea x-attr:id="id" rows="12" cols="60"><x-slot /></textarea>
+<x-else />
+<pre><code><x-slot /></code></pre>
+</x-if>
+</div>

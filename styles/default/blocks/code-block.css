@@ -1,0 +1,100 @@
+/*
+ * CODE-BLOCK block
+ *
+ * Wraps code display with a header bar (language/filename label + copy button).
+ * Two modes via data-mode: static (pre > code) and live (textarea with LDT).
+ * Both use LDT Parser for syntax highlighting via --syntax-* custom properties.
+ *
+ * Usage:
+ *   <x-include template="code-block.html" language="python">code here</x-include>
+ *   <x-include template="code-block.html" language="python" mode="live" id="editor1">code here</x-include>
+ *
+ * Custom properties:
+ *   --code-block-bg         (default: var(--color-bg-secondary, var(--color-bg-primary)))
+ *   --code-block-border     (default: var(--stroke-light))
+ *   --code-block-header-bg  (default: transparent)
+ *   --code-block-radius     (default: var(--radius-s))
+ *
+ * Exceptions:
+ *   data-mode="live"   -- textarea with LDT overlay
+ *   data-mode="static" -- pre > code, read-only (default)
+ */
+
+.code-block {
+  --code-block-bg: var(--color-bg-secondary, var(--color-bg-primary));
+  --code-block-border: var(--stroke-light);
+  --code-block-header-bg: transparent;
+  --code-block-radius: var(--radius-s);
+
+  border: var(--code-block-border);
+  border-radius: var(--code-block-radius);
+  background: var(--code-block-bg);
+  overflow: hidden;
+}
+
+.code-block > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2xs) var(--space-s);
+  background: var(--code-block-header-bg);
+  border-block-end: var(--code-block-border);
+  font-family: var(--font-mono);
+  font-size: var(--size-step--1);
+  color: var(--color-text-secondary, inherit);
+}
+
+.code-block > header [data-action="copy"] {
+  font-family: var(--font-mono);
+  font-size: var(--size-step--1);
+  padding: 0.2em 0.6em;
+  border: var(--code-block-border);
+  border-radius: var(--code-block-radius);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: filter var(--transition-base);
+}
+
+.code-block > header [data-action="copy"]:hover {
+  filter: brightness(1.2);
+}
+
+.code-block > header [data-action="copy"][data-state="copied"] {
+  opacity: 0.7;
+}
+
+/* Static mode: pre > code */
+.code-block pre {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  padding: var(--space-s);
+  background: transparent;
+  overflow-x: auto;
+}
+
+.code-block pre code {
+  border: none;
+  background: none;
+  padding: 0;
+}
+
+/* Live mode: textarea with LDT */
+.code-block[data-mode="live"] .ldt {
+  border: none;
+  border-radius: 0;
+  padding: var(--space-s);
+  background: transparent;
+}
+
+.code-block[data-mode="live"] .ldt,
+.code-block[data-mode="live"] .ldt pre,
+.code-block[data-mode="live"] .ldt textarea {
+  font-family: var(--font-mono) !important;
+  font-size: 0.95em !important;
+}
+
+.code-block[data-mode="live"] .ldt textarea {
+  caret-color: var(--color-text-primary, #000);
+}
