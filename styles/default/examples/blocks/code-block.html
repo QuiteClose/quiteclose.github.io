@@ -1,0 +1,32 @@
+<h3>Static code block</h3>
+
+<x-include template="code-block.html" language="python" filename="script.py">def add_numbers(num1, num2):
+    """
+    Adds two numbers and returns the sum.
+    """
+    sum = num1 + num2
+    return sum
+
+result = add_numbers(5, 4)
+print("Sum:", result)</x-include>
+
+<h3>Static code block (no filename)</h3>
+
+<x-include template="code-block.html" language="javascript">function greet(name) {
+  return `Hello, ${name}!`;
+}
+
+console.log(greet("world"));</x-include>
+
+<h3>Live code block</h3>
+
+<x-include template="code-block.html" language="python" mode="live" id="live-demo">def fibonacci(n):
+    """Return first n Fibonacci numbers."""
+    a, b = 0, 1
+    result = []
+    for _ in range(n):
+        result.append(a)
+        a, b = b, a + b
+    return result
+
+print(fibonacci(10))</x-include>

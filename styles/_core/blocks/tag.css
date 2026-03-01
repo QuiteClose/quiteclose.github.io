@@ -1,0 +1,54 @@
+/*
+ * TAG block (shared)
+ *
+ * Small inline label for topics, categories, or taxonomy terms.
+ * Optionally includes a count badge. Can be rendered as a link.
+ *
+ * Usage:
+ *   <x-include template="tag.html" label="linux" />
+ *   <x-include template="tag.html" label="kubernetes" count="2" href="/topics/kubernetes/" />
+ *
+ * Custom properties:
+ *   --tag-bg        (default: var(--color-bg-secondary, var(--color-bg-primary)))
+ *   --tag-color     (default: currentColor)
+ *   --tag-font-size (default: var(--size-step--1))
+ *   --tag-padding   (default: 0.15em 0.5em)
+ *
+ * Exceptions:
+ *   data-variant="active" -- highlighted/selected state
+ */
+
+.tag {
+  --tag-bg: var(--color-bg-secondary, var(--color-bg-primary));
+  --tag-color: currentColor;
+  --tag-font-size: var(--size-step--1);
+  --tag-padding: 0.15em 0.5em;
+
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3em;
+  padding: var(--tag-padding);
+  background: var(--tag-bg);
+  color: var(--tag-color);
+  font-family: var(--font-mono, monospace);
+  font-size: var(--tag-font-size);
+  line-height: var(--leading-fine, 1.1);
+  border-radius: var(--radius-s, 0.2rem);
+  border: var(--stroke-light, 1px solid currentColor);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+a.tag:hover {
+  filter: brightness(1.15);
+}
+
+.tag[data-variant="active"] {
+  --tag-bg: var(--color-text-primary, currentColor);
+  --tag-color: var(--color-bg-primary, #fff);
+}
+
+.tag .count {
+  font-weight: 700;
+  opacity: 0.7;
+}

@@ -1,0 +1,46 @@
+/*
+ * SIDEBAR composition
+ * Intrinsic two-column layout: sidebar has a target width,
+ * content area has a minimum width that triggers stacking.
+ * Every Layout: https://every-layout.dev/layouts/sidebar/
+ *
+ * Custom properties:
+ *   --gutter (var(--space-s-l))              -- gap between sidebar and content
+ *   --sidebar-target-width (20rem)           -- preferred sidebar width
+ *   --sidebar-content-min-width (50%)        -- minimum content width before stacking
+ *
+ * Exceptions:
+ *   [data-direction='rtl'] -- sidebar on the right instead of left
+ *
+ * The flex-grow: 999 trick gives the content area overwhelming
+ * priority for available space while the sidebar stays near its
+ * target width. When the content can't meet its min-inline-size,
+ * both items wrap to full width.
+ */
+.sidebar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gutter, var(--space-s-l));
+}
+
+.sidebar:not([data-direction]) > :first-child {
+  flex-basis: var(--sidebar-target-width, 20rem);
+  flex-grow: 1;
+}
+
+.sidebar:not([data-direction]) > :last-child {
+  flex-basis: 0;
+  flex-grow: 999;
+  min-inline-size: var(--sidebar-content-min-width, 50%);
+}
+
+.sidebar[data-direction='rtl'] > :last-child {
+  flex-basis: var(--sidebar-target-width, 20rem);
+  flex-grow: 1;
+}
+
+.sidebar[data-direction='rtl'] > :first-child {
+  flex-basis: 0;
+  flex-grow: 999;
+  min-inline-size: var(--sidebar-content-min-width, 50%);
+}

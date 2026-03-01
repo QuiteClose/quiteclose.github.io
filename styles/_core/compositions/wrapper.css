@@ -1,0 +1,17 @@
+/*
+ * WRAPPER composition
+ * Max-width centred container with consistent inline gutters.
+ *
+ * Custom properties:
+ *   --wrapper-max-width (85rem) -- maximum content width
+ *   --gutter                    -- inline padding (from semantic variables)
+ *
+ * Uses content-box sizing so gutters are added outside the
+ * max width, not subtracted from it.
+ */
+.wrapper {
+  max-inline-size: var(--wrapper-max-width, 85rem);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+  position: relative;
+}

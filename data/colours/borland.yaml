@@ -1,0 +1,93 @@
+# Borland colour scheme
+
+light:
+  meta:
+    name: Borland
+    html: Borland
+  palette:
+    navy:         '#000080'
+    deep_blue:    '#0000a8'
+    teal:         '#006078'
+    dark_gray:    '#575757'
+    gray:         '#888888'
+    light_gray:   '#a8a8a8'
+    off_white:    '#f3f3f3'
+    white:        '#ffffff'
+    yellow:       '#ffff57'
+    orange:       '#ffa857'
+    dark_red:     '#aa2222'
+    pink:         '#ff57ff'
+    purple:       '#a800a8'
+    bright_blue:  '#5757ff'
+    cyan:         '#00a8a8'
+    bright_green: '#57ff57'
+  styles:
+    text:
+      primary:   dark_gray
+      secondary: gray
+      emphasis:  teal
+      heading:   orange
+      link:      bright_blue
+      visited:   purple
+      hover:     cyan
+    background:
+      primary:   white
+      secondary: off_white
+      embed:     teal
+  syntax:
+    keyword:     yellow
+    string:      cyan
+    comment:     gray
+    function:    bright_blue
+    type:        bright_green
+    number:      pink
+    operator:    dark_gray
+    constant:    pink
+    variable:    dark_gray
+    punctuation: dark_gray
+
+dark:
+  meta:
+    name: Borland Turbo
+    html: Borland Turbo
+  palette:
+    navy:         '#000080'
+    deep_blue:    '#0000a8'
+    teal:         '#006078'
+    dark_gray:    '#575757'
+    gray:         '#888888'
+    light_gray:   '#a8a8a8'
+    off_white:    '#f3f3f3'
+    white:        '#ffffff'
+    yellow:       '#ffff57'
+    orange:       '#ffa857'
+    dark_red:     '#aa2222'
+    pink:         '#ff57ff'
+    purple:       '#a800a8'
+    bright_blue:  '#5757ff'
+    cyan:         '#00a8a8'
+    bright_green: '#57ff57'
+  styles:
+    text:
+      primary:   gray
+      secondary: dark_gray
+      emphasis:  light_gray
+      heading:   yellow
+      link:      bright_blue
+      visited:   purple
+      hover:     cyan
+    background:
+      primary:   navy
+      secondary: deep_blue
+      embed:     teal
+  syntax:
+    keyword:     yellow
+    string:      cyan
+    comment:     dark_gray
+    function:    bright_blue
+    type:        bright_green
+    number:      pink
+    operator:    gray
+    constant:    pink
+    variable:    gray
+    punctuation: gray

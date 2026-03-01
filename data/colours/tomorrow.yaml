@@ -1,0 +1,93 @@
+# Tomorrow colour scheme
+
+light:
+  meta:
+    name: Tomorrow
+    html: Tomorrow
+  palette:
+    bg0:    '#ffffff'
+    bg1:    '#e0e0e0'
+    bg2:    '#d6d6d6'
+    bg3:    '#b4b7b4'
+    fg3:    '#969896'
+    fg2:    '#4d4d4c'
+    fg1:    '#282a2e'
+    fg0:    '#1d1f21'
+    yellow: '#eab700'
+    orange: '#f5871f'
+    red:    '#c82829'
+    brown:  '#a3685a'
+    purple: '#8959a8'
+    blue:   '#4271ae'
+    aqua:   '#3e999f'
+    green:  '#718c00'
+  styles:
+    text:
+      primary:   fg3
+      secondary: bg3
+      emphasis:  fg2
+      heading:   orange
+      link:      blue
+      visited:   purple
+      hover:     aqua
+    background:
+      primary:   bg0
+      secondary: bg1
+      embed:     fg1
+  syntax:
+    keyword:     purple
+    string:      green
+    comment:     bg3
+    function:    blue
+    type:        yellow
+    number:      orange
+    operator:    fg2
+    constant:    orange
+    variable:    fg2
+    punctuation: fg3
+
+dark:
+  meta:
+    name: Tomorrow Night
+    html: Tomorrow Night
+  palette:
+    bg0:    '#2d2d2d'
+    bg1:    '#393939'
+    bg2:    '#515151'
+    bg3:    '#999999'
+    fg3:    '#b4b7b4'
+    fg2:    '#cccccc'
+    fg1:    '#e0e0e0'
+    fg0:    '#ffffff'
+    yellow: '#ffcc66'
+    orange: '#f99157'
+    red:    '#f2777a'
+    brown:  '#a3685a'
+    purple: '#cc99cc'
+    blue:   '#6699cc'
+    aqua:   '#66cccc'
+    green:  '#99cc99'
+  styles:
+    text:
+      primary:   fg3
+      secondary: bg3
+      emphasis:  fg2
+      heading:   orange
+      link:      blue
+      visited:   purple
+      hover:     aqua
+    background:
+      primary:   bg0
+      secondary: bg1
+      embed:     bg2
+  syntax:
+    keyword:     purple
+    string:      green
+    comment:     bg3
+    function:    blue
+    type:        yellow
+    number:      orange
+    operator:    fg2
+    constant:    orange
+    variable:    fg2
+    punctuation: fg3

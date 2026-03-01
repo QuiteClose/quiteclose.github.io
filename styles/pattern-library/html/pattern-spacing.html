@@ -1,0 +1,35 @@
+<x-extend template="pattern-library.html">
+<x-define slot="layout-css">
+<link rel="stylesheet" x-var:href="page.layout_css" />
+<link rel="stylesheet" href="/css/patterns.css" />
+</x-define>
+<x-define slot="content">
+<x-if var="page.has_tokens">
+<h2>Base Sizes</h2>
+<table class="patterns__tokens">
+  <thead>
+    <tr>
+      <th>Label</th>
+      <th>Property</th>
+      <th>Min</th>
+      <th>Max</th>
+      <th>Preview</th>
+    </tr>
+  </thead>
+  <tbody>
+    <x-for size in spacing.sizes>
+    <tr>
+      <td><x-var name="size.label" /></td>
+      <td><code><x-var name="size.property" /></code></td>
+      <td><x-var name="size.min_px" /></td>
+      <td><x-var name="size.max_px" /></td>
+      <td><span class="patterns__spacing-bar" style="--patterns-bar-height:<x-raw name="size.clamp" />"></span></td>
+    </tr>
+    </x-for>
+  </tbody>
+</table>
+<x-else />
+<p>No spacing configuration.</p>
+</x-if>
+</x-define>
+</x-extend>
