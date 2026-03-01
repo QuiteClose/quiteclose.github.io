@@ -8,7 +8,7 @@
 <x-if var="page.has_tokens">
 <h2>Token Configuration</h2>
 <ul>
-<li><strong>Viewport:</strong> <x-var name="page.viewport_min" />px &ndash; <x-var name="page.viewport_max" />px</li>
+  <li><strong>Viewport:</strong> <x-var name="page.viewport_min" />px &ndash; <x-var name="page.viewport_max" />px</li>
 </ul>
 </x-if>
 <x-if var="page.has_highlights">
@@ -18,9 +18,9 @@
 <x-if var="page.has_css">
 <h2>CSS Files</h2>
 <ul>
-<x-for file in overview.css_files>
-<li><code><x-var name="file.path" /></code></li>
-</x-for>
+  <x-for file in overview.css_files>
+  <li><code><x-var name="file.path" /></code></li>
+  </x-for>
 </ul>
 </x-if>
 </x-define>

@@ -8,31 +8,31 @@
 
 <h2>Headings</h2>
 <div class="flow">
-<h1>Heading level 1</h1>
-<h2>Heading level 2</h2>
-<h3>Heading level 3</h3>
-<h4>Heading level 4</h4>
-<h5>Heading level 5</h5>
-<h6>Heading level 6</h6>
-<h2><a href="#">Heading with a link</a></h2>
-<h3><a href="#">Another heading link</a></h3>
+  <h1>Heading level 1</h1>
+  <h2>Heading level 2</h2>
+  <h3>Heading level 3</h3>
+  <h4>Heading level 4</h4>
+  <h5>Heading level 5</h5>
+  <h6>Heading level 6</h6>
+  <h2><a href="#">Heading with a link</a></h2>
+  <h3><a href="#">Another heading link</a></h3>
 </div>
 
 <hr />
 
 <h2>Paragraphs and inline elements</h2>
 <div class="flow">
-<p>A standard paragraph of body text. The global styles set the font to the body stack, with a comfortable line height and measure. This paragraph exists to show how running text looks at the base size.</p>
-<p>Text can be <strong>strongly emphasised</strong> or given <em>regular emphasis</em>. You can mark <code>inline code</code>, <kbd>keyboard input</kbd>, <samp>sample output</samp>, and <var>variables</var>. Use <q>inline quotations</q> for short quotes, <ins>inserted text</ins> for additions, and <small>small text</small> for fine print.</p>
-<p>Other inline elements: <mark>highlighted text</mark>, <abbr title="Cascading Style Sheets">CSS</abbr> abbreviations, H<sub>2</sub>O subscript, and E=mc<sup>2</sup> superscript.</p>
-<p>A paragraph with a <a href="#">standard link</a> in the middle of a sentence.</p>
+  <p>A standard paragraph of body text. The global styles set the font to the body stack, with a comfortable line height and measure. This paragraph exists to show how running text looks at the base size.</p>
+  <p>Text can be <strong>strongly emphasised</strong> or given <em>regular emphasis</em>. You can mark <code>inline code</code>, <kbd>keyboard input</kbd>, <samp>sample output</samp>, and <var>variables</var>. Use <q>inline quotations</q> for short quotes, <ins>inserted text</ins> for additions, and <small>small text</small> for fine print.</p>
+  <p>Other inline elements: <mark>highlighted text</mark>, <abbr title="Cascading Style Sheets">CSS</abbr> abbreviations, H<sub>2</sub>O subscript, and E=mc<sup>2</sup> superscript.</p>
+  <p>A paragraph with a <a href="#">standard link</a> in the middle of a sentence.</p>
 </div>
 
 <hr />
 
 <h2>Code blocks</h2>
 <div class="flow">
-<pre><code>function greet(name) {
+  <pre><code>function greet(name) {
   return `Hello, ${name}!`;
 }
 
@@ -44,172 +44,172 @@ console.log(message);</code></pre>
 
 <h2>Lists</h2>
 <div class="flow">
-<h3>Unordered list</h3>
-<ul>
-<li>First item</li>
-<li>Second item with more text to show how wrapping works when the content is longer than a single line</li>
-<li>Third item
-<ul>
-<li>Nested item one</li>
-<li>Nested item two</li>
-</ul>
-</li>
-<li>Fourth item</li>
-</ul>
+  <h3>Unordered list</h3>
+  <ul>
+    <li>First item</li>
+    <li>Second item with more text to show how wrapping works when the content is longer than a single line</li>
+    <li>Third item
+      <ul>
+        <li>Nested item one</li>
+        <li>Nested item two</li>
+      </ul>
+    </li>
+    <li>Fourth item</li>
+  </ul>
 
-<h3>Ordered list</h3>
-<ol>
-<li>First step</li>
-<li>Second step</li>
-<li>Third step
-<ol>
-<li>Sub-step one</li>
-<li>Sub-step two</li>
-</ol>
-</li>
-<li>Fourth step</li>
-</ol>
+  <h3>Ordered list</h3>
+  <ol>
+    <li>First step</li>
+    <li>Second step</li>
+    <li>Third step
+      <ol>
+        <li>Sub-step one</li>
+        <li>Sub-step two</li>
+      </ol>
+    </li>
+    <li>Fourth step</li>
+  </ol>
 
-<h3>Definition list</h3>
-<dl>
-<dt>Term one</dt>
-<dd>Definition for the first term, explaining what it means.</dd>
-<dt>Term two</dt>
-<dd>Definition for the second term.</dd>
-<dt>Term three</dt>
-<dd>A longer definition that wraps to multiple lines to show how the indentation and spacing hold up.</dd>
-</dl>
+  <h3>Definition list</h3>
+  <dl>
+    <dt>Term one</dt>
+    <dd>Definition for the first term, explaining what it means.</dd>
+    <dt>Term two</dt>
+    <dd>Definition for the second term.</dd>
+    <dt>Term three</dt>
+    <dd>A longer definition that wraps to multiple lines to show how the indentation and spacing hold up.</dd>
+  </dl>
 </div>
 
 <hr />
 
 <h2>Blockquote</h2>
 <div class="flow">
-<blockquote>
-<p>Be the browser's mentor, not its micromanager. Give the browser some solid rules and hints, then let it make the right calls for the people that visit it.</p>
-<footer>Andy Bell, <cite>Be the browser's mentor, not its micromanager</cite></footer>
-</blockquote>
+  <blockquote>
+    <p>Be the browser's mentor, not its micromanager. Give the browser some solid rules and hints, then let it make the right calls for the people that visit it.</p>
+    <footer>Andy Bell, <cite>Be the browser's mentor, not its micromanager</cite></footer>
+  </blockquote>
 </div>
 
 <hr />
 
 <h2>Table</h2>
 <div class="flow">
-<table>
-<caption>Browser support for modern CSS features</caption>
-<thead>
-<tr>
-<th>Feature</th>
-<th>Chrome</th>
-<th>Firefox</th>
-<th>Safari</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>:has()</code></td>
-<td>105+</td>
-<td>121+</td>
-<td>15.4+</td>
-</tr>
-<tr>
-<td><code>container queries</code></td>
-<td>105+</td>
-<td>110+</td>
-<td>16.0+</td>
-</tr>
-<tr>
-<td><code>@layer</code></td>
-<td>99+</td>
-<td>97+</td>
-<td>15.4+</td>
-</tr>
-<tr>
-<td><code>subgrid</code></td>
-<td>117+</td>
-<td>71+</td>
-<td>16.0+</td>
-</tr>
-</tbody>
-</table>
+  <table>
+    <caption>Browser support for modern CSS features</caption>
+    <thead>
+      <tr>
+        <th>Feature</th>
+        <th>Chrome</th>
+        <th>Firefox</th>
+        <th>Safari</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>:has()</code></td>
+        <td>105+</td>
+        <td>121+</td>
+        <td>15.4+</td>
+      </tr>
+      <tr>
+        <td><code>container queries</code></td>
+        <td>105+</td>
+        <td>110+</td>
+        <td>16.0+</td>
+      </tr>
+      <tr>
+        <td><code>@layer</code></td>
+        <td>99+</td>
+        <td>97+</td>
+        <td>15.4+</td>
+      </tr>
+      <tr>
+        <td><code>subgrid</code></td>
+        <td>117+</td>
+        <td>71+</td>
+        <td>16.0+</td>
+      </tr>
+    </tbody>
+  </table>
 </div>
 
 <hr />
 
 <h2>Horizontal rule</h2>
 <div class="flow">
-<p>Text before the rule.</p>
-<hr />
-<p>Text after the rule.</p>
+  <p>Text before the rule.</p>
+  <hr />
+  <p>Text after the rule.</p>
 </div>
 
 <hr />
 
 <h2>Media</h2>
 <div class="flow">
-<figure>
-<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400' fill='%23ccc'%3E%3Crect width='600' height='400'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23999' font-size='24'%3E600 × 400%3C/text%3E%3C/svg%3E" alt="Placeholder image" width="600" height="400" />
-<figcaption>A placeholder image with a caption below it.</figcaption>
-</figure>
+  <figure>
+    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400' fill='%23ccc'%3E%3Crect width='600' height='400'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23999' font-size='24'%3E600 × 400%3C/text%3E%3C/svg%3E" alt="Placeholder image" width="600" height="400" />
+    <figcaption>A placeholder image with a caption below it.</figcaption>
+  </figure>
 </div>
 
 <hr />
 
 <h2>Forms</h2>
 <div class="flow">
-<form onsubmit="return false;">
-<label>Text input
-<input type="text" placeholder="Enter some text" />
-</label>
-<label>Email input
-<input type="email" placeholder="you@example.com" />
-</label>
-<label>Select
-<select>
-<option>Option one</option>
-<option>Option two</option>
-<option>Option three</option>
-</select>
-</label>
-<label>Textarea
-<textarea rows="4" placeholder="Write something longer here..."></textarea>
-</label>
-<fieldset>
-<legend>Checkbox group</legend>
-<label><input type="checkbox" checked /> Checked option</label>
-<label><input type="checkbox" /> Unchecked option</label>
-</fieldset>
-<fieldset>
-<legend>Radio group</legend>
-<label><input type="radio" name="radio-demo" checked /> First choice</label>
-<label><input type="radio" name="radio-demo" /> Second choice</label>
-</fieldset>
-<label>Disabled input
-<input type="text" value="Cannot edit this" disabled />
-</label>
-</form>
+  <form onsubmit="return false;">
+    <label>Text input
+      <input type="text" placeholder="Enter some text" />
+    </label>
+    <label>Email input
+      <input type="email" placeholder="you@example.com" />
+    </label>
+    <label>Select
+      <select>
+        <option>Option one</option>
+        <option>Option two</option>
+        <option>Option three</option>
+      </select>
+    </label>
+    <label>Textarea
+      <textarea rows="4" placeholder="Write something longer here..."></textarea>
+    </label>
+    <fieldset>
+      <legend>Checkbox group</legend>
+      <label><input type="checkbox" checked /> Checked option</label>
+      <label><input type="checkbox" /> Unchecked option</label>
+    </fieldset>
+    <fieldset>
+      <legend>Radio group</legend>
+      <label><input type="radio" name="radio-demo" checked /> First choice</label>
+      <label><input type="radio" name="radio-demo" /> Second choice</label>
+    </fieldset>
+    <label>Disabled input
+      <input type="text" value="Cannot edit this" disabled />
+    </label>
+  </form>
 </div>
 
 <hr />
 
 <h2>Details and summary</h2>
 <div class="flow">
-<details>
-<summary>Click to expand</summary>
-<p>This content is revealed when the disclosure widget is toggled open. It should have spacing below the summary.</p>
-</details>
-<details open>
-<summary>Already expanded</summary>
-<p>This details element starts in its open state so you can see the spacing without interaction.</p>
-</details>
+  <details>
+    <summary>Click to expand</summary>
+    <p>This content is revealed when the disclosure widget is toggled open. It should have spacing below the summary.</p>
+  </details>
+  <details open>
+    <summary>Already expanded</summary>
+    <p>This details element starts in its open state so you can see the spacing without interaction.</p>
+  </details>
 </div>
 
 <hr />
 
 <h2>Focus states</h2>
 <div class="flow">
-<p>Tab through the interactive elements on this page to see the <code>:focus-visible</code> outline. The focus ring uses <code>--focus-color</code> (defaulting to <code>currentColor</code>) with an offset of <code>0.2lh</code>.</p>
-<p><a href="#">A focusable link</a></p>
+  <p>Tab through the interactive elements on this page to see the <code>:focus-visible</code> outline. The focus ring uses <code>--focus-color</code> (defaulting to <code>currentColor</code>) with an offset of <code>0.2lh</code>.</p>
+  <p><a href="#">A focusable link</a></p>
 </div>
 </x-define>
 </x-extend>

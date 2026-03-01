@@ -1,1 +1,9 @@
-<x-if attr="href" exists><a class="tag" x-attr:href="href" x-attr:data-variant="variant"><x-attr name="label" /><x-if attr="count" exists><span class="count"><x-attr name="count" /></span></x-if></a><x-else /><span class="tag" x-attr:data-variant="variant"><x-attr name="label" /><x-if attr="count" exists><span class="count"><x-attr name="count" /></span></x-if></span></x-if>
+<x-if attr="href" exists>
+<a class="tag" x-attr:href="href" x-attr:data-variant="variant">
+  <x-attr name="label" /><x-if attr="count" exists><span class="count"><x-attr name="count" /></span></x-if>
+</a>
+<x-else />
+<span class="tag" x-attr:data-variant="variant">
+  <x-attr name="label" /><x-if attr="count" exists><span class="count"><x-attr name="count" /></span></x-if>
+</span>
+</x-if>
