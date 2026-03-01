@@ -1155,12 +1155,33 @@ fn renderPatternTemplate(
     writeGeneratedFile(out_path, rendered);
 }
 
-fn buildPatternContext(a: Allocator, ln: []const u8, dn: []const u8, site_conf: yaml.Value) template.Context {
+fn buildPatternContext(
+    a: Allocator,
+    ln: []const u8,
+    dn: []const u8,
+    site_conf: yaml.Value,
+    block_entries: []const template.Entry,
+) template.Context {
     var ctx: template.Context = .{ .dev_mode = true };
     ctx.putVar(a, "page.layout_display_name", dn) catch @panic("OOM");
     ctx.putVar(a, "page.layout_css", std.fmt.allocPrint(a, "/css/{s}.css", .{ln}) catch @panic("OOM")) catch @panic("OOM");
     const nav = buildNavLinks(a, ln);
     ctx.putCollection(a, "nav.links", nav.items) catch @panic("OOM");
+
+    if (block_entries.len > 0) {
+        ctx.putVar(a, "nav.has_blocks", "true") catch @panic("OOM");
+        var block_nav = std.ArrayList(template.Entry){};
+        for (block_entries) |entry| {
+            const basename = entry.get("basename") orelse continue;
+            const name = entry.get("name") orelse basename;
+            var nav_entry: template.Entry = .{};
+            nav_entry.values.put(a, "label", name) catch @panic("OOM");
+            nav_entry.values.put(a, "url", std.fmt.allocPrint(a, "/patterns/{s}/blocks/{s}/", .{ ln, basename }) catch @panic("OOM")) catch @panic("OOM");
+            block_nav.append(a, nav_entry) catch @panic("OOM");
+        }
+        ctx.putCollection(a, "nav.blocks", block_nav.items) catch @panic("OOM");
+    }
+
     putSiteVars(a, &ctx, site_conf);
     return ctx;
 }
@@ -1247,9 +1268,15 @@ fn generatePatternLibrary(
     const manifest = try yaml.parse(a, manifest_src);
     const display_name = if (manifest.get("name")) |v| v.str() orelse layout_name else layout_name;
 
+    // Pre-compute block entries for nav on all pages
+    const block_entries: []const template.Entry = if (manifest.get("css")) |css_list|
+        try buildPatternEntries(a, styles_dir, css_list, "blocks")
+    else
+        &.{};
+
     // Overview page
     {
-        var ctx = buildPatternContext(a, layout_name, display_name, site_conf);
+        var ctx = buildPatternContext(a, layout_name, display_name, site_conf, block_entries);
         ctx.putVar(a, "page.title", display_name) catch @panic("OOM");
 
         if (manifest.get("tokens")) |tokens| {
@@ -1286,7 +1313,7 @@ fn generatePatternLibrary(
 
     // Colour page
     {
-        var ctx = buildPatternContext(a, layout_name, display_name, site_conf);
+        var ctx = buildPatternContext(a, layout_name, display_name, site_conf, block_entries);
         ctx.putVar(a, "page.title", "Colour Tokens") catch @panic("OOM");
 
         if (manifest.get("highlights")) |highlights| {
@@ -1366,7 +1393,7 @@ fn generatePatternLibrary(
 
     // Typography page
     {
-        var ctx = buildPatternContext(a, layout_name, display_name, site_conf);
+        var ctx = buildPatternContext(a, layout_name, display_name, site_conf, block_entries);
         ctx.putVar(a, "page.title", "Typography Tokens") catch @panic("OOM");
 
         if (manifest.get("tokens")) |tokens| {
@@ -1417,7 +1444,7 @@ fn generatePatternLibrary(
 
     // Spacing page
     {
-        var ctx = buildPatternContext(a, layout_name, display_name, site_conf);
+        var ctx = buildPatternContext(a, layout_name, display_name, site_conf, block_entries);
         ctx.putVar(a, "page.title", "Spacing Tokens") catch @panic("OOM");
 
         if (manifest.get("tokens")) |tokens| {
@@ -1450,7 +1477,7 @@ fn generatePatternLibrary(
 
     // Global Styles page
     {
-        var ctx = buildPatternContext(a, layout_name, display_name, site_conf);
+        var ctx = buildPatternContext(a, layout_name, display_name, site_conf, block_entries);
         ctx.putVar(a, "page.title", "Global Styles") catch @panic("OOM");
         const path = try std.fmt.allocPrint(a, "{s}/patterns/{s}/css/globals/index.html", .{ output_dir_path, layout_name });
         renderPatternTemplate(a, "pattern-globals.html", path, &ctx, resolver);
@@ -1458,7 +1485,7 @@ fn generatePatternLibrary(
 
     // Compositions page
     {
-        var ctx = buildPatternContext(a, layout_name, display_name, site_conf);
+        var ctx = buildPatternContext(a, layout_name, display_name, site_conf, block_entries);
         ctx.putVar(a, "page.title", "Compositions") catch @panic("OOM");
         if (manifest.get("css")) |css_list| {
             const entries = try buildPatternEntries(a, styles_dir, css_list, "compositions");
@@ -1473,7 +1500,7 @@ fn generatePatternLibrary(
 
     // Utilities page
     {
-        var ctx = buildPatternContext(a, layout_name, display_name, site_conf);
+        var ctx = buildPatternContext(a, layout_name, display_name, site_conf, block_entries);
         ctx.putVar(a, "page.title", "Utilities") catch @panic("OOM");
         if (manifest.get("css")) |css_list| {
             const entries = try buildPatternEntries(a, styles_dir, css_list, "utilities");
@@ -1486,19 +1513,94 @@ fn generatePatternLibrary(
         renderPatternTemplate(a, "pattern-utilities.html", path, &ctx, resolver);
     }
 
-    // Blocks page
+    // Blocks listing page
     {
-        var ctx = buildPatternContext(a, layout_name, display_name, site_conf);
+        var ctx = buildPatternContext(a, layout_name, display_name, site_conf, block_entries);
         ctx.putVar(a, "page.title", "Blocks") catch @panic("OOM");
-        if (manifest.get("css")) |css_list| {
-            const entries = try buildPatternEntries(a, styles_dir, css_list, "blocks");
-            if (entries.len > 0) {
-                ctx.putVar(a, "page.has_entries", "true") catch @panic("OOM");
-                ctx.putCollection(a, "css.entries", entries) catch @panic("OOM");
+        if (block_entries.len > 0) {
+            ctx.putVar(a, "page.has_entries", "true") catch @panic("OOM");
+            var listing = std.ArrayList(template.Entry){};
+            for (block_entries) |entry| {
+                const basename = entry.get("basename") orelse continue;
+                const name = entry.get("name") orelse basename;
+                var le: template.Entry = .{};
+                le.values.put(a, "label", name) catch @panic("OOM");
+                le.values.put(a, "url", std.fmt.allocPrint(a, "/patterns/{s}/blocks/{s}/", .{ layout_name, basename }) catch @panic("OOM")) catch @panic("OOM");
+                listing.append(a, le) catch @panic("OOM");
             }
+            ctx.putCollection(a, "blocks.entries", listing.items) catch @panic("OOM");
         }
         const path = try std.fmt.allocPrint(a, "{s}/patterns/{s}/css/blocks/index.html", .{ output_dir_path, layout_name });
         renderPatternTemplate(a, "pattern-blocks.html", path, &ctx, resolver);
+    }
+
+    // Per-block preview pages and detail pages
+    for (block_entries) |entry| {
+        const basename = entry.get("basename") orelse continue;
+        const name = entry.get("name") orelse basename;
+        const layout_css_path = try std.fmt.allocPrint(a, "/css/{s}.css", .{layout_name});
+
+        // Preview page: render example through template engine for <x-include> resolution
+        if (entry.get("example_src")) |example_src| {
+            var tmpl_buf = std.ArrayList(u8){};
+            const tw = tmpl_buf.writer(a);
+            try tw.writeAll("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n");
+            try tw.writeAll("<meta charset=\"utf-8\" />\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n");
+            try tw.writeAll("<title>Preview</title>\n");
+            try tw.print("<link rel=\"stylesheet\" href=\"{s}\" />\n", .{layout_css_path});
+            try tw.writeAll("<style>\nbody { padding: 1rem 1rem 5rem; min-height: unset; margin: 0; }\n</style>\n");
+            try tw.writeAll("</head>\n<body>\n<div class=\"preview\">\n");
+            try tw.writeAll(example_src);
+            try tw.writeAll("\n</div>\n</body>\n</html>");
+            const preview_tmpl = tmpl_buf.items;
+
+            var preview_ctx: template.Context = .{ .dev_mode = true };
+            putSiteVars(a, &preview_ctx, site_conf);
+            const preview_rendered = template.render(a, preview_tmpl, &preview_ctx, resolver) catch |err|
+                fatalFmt("error rendering preview for block '{s}': {}", .{ basename, err });
+            const preview_path = try std.fmt.allocPrint(a, "{s}/patterns/{s}/preview/{s}/index.html", .{ output_dir_path, layout_name, basename });
+            writeGeneratedFile(preview_path, preview_rendered);
+        }
+
+        // Detail page
+        {
+            var ctx = buildPatternContext(a, layout_name, display_name, site_conf, block_entries);
+            ctx.putVar(a, "page.title", name) catch @panic("OOM");
+            ctx.putVar(a, "block.name", name) catch @panic("OOM");
+            ctx.putVar(a, "block.basename", basename) catch @panic("OOM");
+            ctx.putVar(a, "block.preview_url", std.fmt.allocPrint(a, "/patterns/{s}/preview/{s}/", .{ layout_name, basename }) catch @panic("OOM")) catch @panic("OOM");
+
+            if (entry.get("description")) |desc| {
+                ctx.putVar(a, "block.description", desc) catch @panic("OOM");
+            }
+            if (entry.get("has_example")) |_| {
+                ctx.putVar(a, "block.has_example", "true") catch @panic("OOM");
+            }
+            if (entry.get("example_src")) |src| {
+                ctx.putVar(a, "block.example_src", src) catch @panic("OOM");
+            }
+            if (entry.get("has_properties")) |_| {
+                ctx.putVar(a, "block.has_properties", "true") catch @panic("OOM");
+            }
+            if (entry.get("properties_html")) |html| {
+                ctx.putVar(a, "block.properties_html", html) catch @panic("OOM");
+            }
+            if (entry.get("has_exceptions")) |_| {
+                ctx.putVar(a, "block.has_exceptions", "true") catch @panic("OOM");
+            }
+            if (entry.get("exceptions_html")) |html| {
+                ctx.putVar(a, "block.exceptions_html", html) catch @panic("OOM");
+            }
+            if (entry.get("has_url")) |_| {
+                ctx.putVar(a, "block.has_url", "true") catch @panic("OOM");
+            }
+            if (entry.get("ref_url")) |url| {
+                ctx.putVar(a, "block.ref_url", url) catch @panic("OOM");
+            }
+
+            const detail_path = try std.fmt.allocPrint(a, "{s}/patterns/{s}/blocks/{s}/index.html", .{ output_dir_path, layout_name, basename });
+            renderPatternTemplate(a, "pattern-block.html", detail_path, &ctx, resolver);
+        }
     }
 }
 
@@ -1639,8 +1741,6 @@ fn buildPatternEntries(
 
     var entries = std.ArrayList(template.Entry){};
     for (css_paths.items) |css_path| {
-        var buf = std.ArrayList(u8){};
-        const w = buf.writer(a);
         const css_source = styles_dir.readFileAlloc(a, css_path, 1 << 20) catch continue;
         const doc = parseCssDoc(a, css_source);
         const basename = blk: {
@@ -1650,61 +1750,57 @@ fn buildPatternEntries(
             break :blk fname;
         };
 
-        try w.print("<article class=\"pattern\" id=\"{s}\">\n", .{basename});
-        if (doc.name.len > 0) {
-            try w.print("<h2>{s}</h2>\n", .{doc.name});
-        } else {
-            try w.print("<h2>{s}</h2>\n", .{basename});
+        var e: template.Entry = .{};
+        const name = if (doc.name.len > 0) doc.name else basename;
+        e.values.put(a, "name", name) catch @panic("OOM");
+        e.values.put(a, "basename", basename) catch @panic("OOM");
+        if (doc.description.len > 0) {
+            e.values.put(a, "description", doc.description) catch @panic("OOM");
         }
-        if (doc.description.len > 0) try w.print("<p>{s}</p>\n", .{doc.description});
-        if (doc.url.len > 0) try w.print("<p><a href=\"{s}\">Reference</a></p>\n", .{doc.url});
+        if (doc.url.len > 0) {
+            e.values.put(a, "ref_url", doc.url) catch @panic("OOM");
+            e.values.put(a, "has_url", "true") catch @panic("OOM");
+        }
+
         if (doc.properties.len > 0) {
-            try w.writeAll("<h3>Custom properties</h3>\n<table class=\"patterns__props\">\n");
-            try w.writeAll("<thead><tr><th>Property</th><th>Default</th><th>Description</th></tr></thead>\n<tbody>\n");
+            var pbuf = std.ArrayList(u8){};
+            const pw = pbuf.writer(a);
+            try pw.writeAll("<table class=\"patterns__props\">\n");
+            try pw.writeAll("<thead><tr><th>Property</th><th>Default</th><th>Description</th></tr></thead>\n<tbody>\n");
             for (doc.properties) |prop| {
-                try w.print("<tr><td><code>{s}</code></td><td><code>{s}</code></td><td>{s}</td></tr>\n", .{ prop.name, prop.default, prop.description });
+                try pw.print("<tr><td><code>{s}</code></td><td><code>{s}</code></td><td>{s}</td></tr>\n", .{ prop.name, prop.default, prop.description });
             }
-            try w.writeAll("</tbody></table>\n");
+            try pw.writeAll("</tbody></table>\n");
+            e.values.put(a, "properties_html", pbuf.items) catch @panic("OOM");
+            e.values.put(a, "has_properties", "true") catch @panic("OOM");
         }
+
         if (doc.exceptions.len > 0) {
-            try w.writeAll("<h3>Exceptions</h3>\n<table class=\"patterns__exceptions\">\n");
-            try w.writeAll("<thead><tr><th>Selector</th><th>Description</th></tr></thead>\n<tbody>\n");
+            var ebuf = std.ArrayList(u8){};
+            const ew = ebuf.writer(a);
+            try ew.writeAll("<table class=\"patterns__exceptions\">\n");
+            try ew.writeAll("<thead><tr><th>Selector</th><th>Description</th></tr></thead>\n<tbody>\n");
             for (doc.exceptions) |exc| {
-                try w.print("<tr><td><code>{s}</code></td><td>{s}</td></tr>\n", .{ exc.selector, exc.description });
+                try ew.print("<tr><td><code>{s}</code></td><td>{s}</td></tr>\n", .{ exc.selector, exc.description });
             }
-            try w.writeAll("</tbody></table>\n");
+            try ew.writeAll("</tbody></table>\n");
+            e.values.put(a, "exceptions_html", ebuf.items) catch @panic("OOM");
+            e.values.put(a, "has_exceptions", "true") catch @panic("OOM");
         }
+
         const example_path = blk: {
             const dir_part = if (std.mem.lastIndexOfScalar(u8, css_path, '/')) |s| css_path[0..s] else "";
             const parent_dir = if (std.mem.lastIndexOfScalar(u8, dir_part, '/')) |s| dir_part[0..s] else "";
             break :blk try std.fmt.allocPrint(a, "{s}/examples/{s}/{s}.html", .{ parent_dir, category, basename });
         };
         if (styles_dir.readFileAlloc(a, example_path, 1 << 20)) |example_src| {
-            try w.writeAll("<h3>Example</h3>\n<div class=\"pattern__preview\">\n");
-            try w.writeAll(example_src);
-            try w.writeAll("\n</div>\n<details>\n<summary>Source</summary>\n<pre><code>");
-            try emitHtmlEscaped(w, example_src);
-            try w.writeAll("</code></pre>\n</details>\n");
+            e.values.put(a, "example_src", example_src) catch @panic("OOM");
+            e.values.put(a, "has_example", "true") catch @panic("OOM");
         } else |_| {}
-        try w.writeAll("</article>\n");
 
-        var e: template.Entry = .{};
-        e.values.put(a, "article_html", buf.items) catch @panic("OOM");
         entries.append(a, e) catch @panic("OOM");
     }
     return entries.toOwnedSlice(a) catch @panic("OOM");
-}
-
-fn emitHtmlEscaped(w: std.ArrayList(u8).Writer, text: []const u8) !void {
-    for (text) |c| {
-        switch (c) {
-            '&' => try w.writeAll("&amp;"),
-            '<' => try w.writeAll("&lt;"),
-            '>' => try w.writeAll("&gt;"),
-            '"' => try w.writeAll("&quot;"),
-            else => try w.writeByte(c),
-        }
-    }
 }
 
 fn fatal(msg: []const u8) noreturn {
