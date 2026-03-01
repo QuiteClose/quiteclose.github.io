@@ -10,12 +10,20 @@ pub const Entry = struct {
     }
 };
 
+pub const ErrorDetail = struct {
+    line: usize = 0,
+    column: usize = 0,
+    source_file: []const u8 = "",
+    message: []const u8 = "",
+};
+
 pub const Context = struct {
     vars: std.StringArrayHashMapUnmanaged([]const u8) = .{},
     attrs: std.StringArrayHashMapUnmanaged([]const u8) = .{},
     slots: std.StringArrayHashMapUnmanaged([]const u8) = .{},
     collections: std.StringArrayHashMapUnmanaged([]const Entry) = .{},
     dev_mode: bool = false,
+    err_detail: ?*ErrorDetail = null,
 
     pub fn putVar(self: *Context, a: Allocator, key: []const u8, value: []const u8) !void {
         try self.vars.put(a, key, value);
@@ -82,16 +90,33 @@ pub const RenderError = error{
     TemplateNotFound,
     CircularReference,
     DuplicateSlotDefinition,
+    UndefinedVariable,
     OutOfMemory,
 };
 
 const max_depth = 50;
 
 pub fn render(a: Allocator, input: []const u8, ctx: *const Context, resolver: *const Resolver) RenderError![]const u8 {
-    return renderTemplate(a, input, ctx, resolver);
+    var owned_vars: @TypeOf(ctx.vars) = .{};
+    defer owned_vars.deinit(a);
+    var vit = ctx.vars.iterator();
+    while (vit.next()) |kv| {
+        try owned_vars.put(a, kv.key_ptr.*, kv.value_ptr.*);
+    }
+    var mutable_ctx: Context = .{
+        .vars = owned_vars,
+        .attrs = ctx.attrs,
+        .slots = ctx.slots,
+        .collections = ctx.collections,
+        .dev_mode = ctx.dev_mode,
+        .err_detail = ctx.err_detail,
+    };
+    const result = try renderTemplate(a, input, &mutable_ctx, resolver);
+    owned_vars = mutable_ctx.vars;
+    return result;
 }
 
-fn renderTemplate(a: Allocator, input: []const u8, ctx: *const Context, resolver: *const Resolver) RenderError![]const u8 {
+fn renderTemplate(a: Allocator, input: []const u8, ctx: *Context, resolver: *const Resolver) RenderError![]const u8 {
     const start = skipWhitespace(input);
     if (!std.mem.startsWith(u8, input[start..], "<x-extend ") and
         !std.mem.startsWith(u8, input[start..], "<x-extend>"))
@@ -123,16 +148,27 @@ fn renderTemplate(a: Allocator, input: []const u8, ctx: *const Context, resolver
             !std.mem.startsWith(u8, current[ws..], "<x-extend>")) break;
 
         const rest = current[ws..];
-        const tag_end = findTagEnd(rest) orelse return error.MalformedElement;
-        const parent_name = extractAttrValue(rest[0 .. tag_end + 1], "template") orelse
+        const tag_end = findTagEnd(rest) orelse {
+            setErrorDetail(ctx, current, ws, "unclosed x-extend tag");
             return error.MalformedElement;
+        };
+        const parent_name = extractAttrValue(rest[0 .. tag_end + 1], "template") orelse {
+            setErrorDetail(ctx, current, ws, "missing 'template' attribute on x-extend");
+            return error.MalformedElement;
+        };
 
-        if (visited.contains(parent_name)) return error.CircularReference;
+        if (visited.contains(parent_name)) {
+            setErrorDetail(ctx, current, ws, parent_name);
+            return error.CircularReference;
+        }
         try visited.put(a, parent_name, {});
 
         try parseDefines(a, rest[tag_end + 1 ..], &slots, &allocs);
 
-        current = resolver.get(parent_name) orelse return error.TemplateNotFound;
+        current = resolver.get(parent_name) orelse {
+            setErrorDetail(ctx, current, ws, parent_name);
+            return error.TemplateNotFound;
+        };
     }
 
     var render_ctx: Context = .{
@@ -141,48 +177,96 @@ fn renderTemplate(a: Allocator, input: []const u8, ctx: *const Context, resolver
         .slots = slots,
         .collections = ctx.collections,
         .dev_mode = ctx.dev_mode,
+        .err_detail = ctx.err_detail,
     };
 
     return renderContent(a, current, &render_ctx, resolver, 0);
 }
 
-fn renderContent(a: Allocator, input: []const u8, ctx: *const Context, resolver: *const Resolver, depth: usize) RenderError![]const u8 {
+fn renderContent(a: Allocator, input: []const u8, ctx: *Context, resolver: *const Resolver, depth: usize) RenderError![]const u8 {
     if (depth > max_depth) return error.CircularReference;
 
     var out: std.ArrayList(u8) = .{};
     errdefer out.deinit(a);
 
+    var let_allocs: std.ArrayList([]const u8) = .{};
+    defer {
+        for (let_allocs.items) |s| a.free(s);
+        let_allocs.deinit(a);
+    }
+
     var i: usize = 0;
     while (i < input.len) {
         if (std.mem.startsWith(u8, input[i..], "<x-var ") or
-            std.mem.startsWith(u8, input[i..], "<x-var/>"))
+            std.mem.startsWith(u8, input[i..], "<x-var/>") or
+            std.mem.startsWith(u8, input[i..], "<x-var>"))
         {
-            const rest = input[i..];
-            const end_offset = std.mem.indexOf(u8, rest, "/>") orelse
-                return error.MalformedElement;
-            const tag = rest[0 .. end_offset + 2];
-            const name = extractAttrValue(tag, "name") orelse
-                return error.MalformedElement;
-            if (ctx.getVar(name)) |value| {
-                try appendEscaped(a, &out, value);
-            }
-            i += end_offset + 2;
+            i = try renderVarOrRaw(a, input, i, ctx, resolver, depth, &out, true);
             continue;
         }
 
         if (std.mem.startsWith(u8, input[i..], "<x-raw ") or
-            std.mem.startsWith(u8, input[i..], "<x-raw/>"))
+            std.mem.startsWith(u8, input[i..], "<x-raw/>") or
+            std.mem.startsWith(u8, input[i..], "<x-raw>"))
+        {
+            i = try renderVarOrRaw(a, input, i, ctx, resolver, depth, &out, false);
+            continue;
+        }
+
+        if (std.mem.startsWith(u8, input[i..], "<x-let ") or
+            std.mem.startsWith(u8, input[i..], "<x-let>"))
         {
             const rest = input[i..];
-            const end_offset = std.mem.indexOf(u8, rest, "/>") orelse
+            const tag_end = findTagEnd(rest) orelse {
+                setErrorDetail(ctx, input, i, "unclosed x-let tag");
                 return error.MalformedElement;
-            const tag = rest[0 .. end_offset + 2];
-            const name = extractAttrValue(tag, "name") orelse
+            };
+            const tag = rest[0 .. tag_end + 1];
+            const let_name = extractAttrValue(tag, "name") orelse {
+                setErrorDetail(ctx, input, i, "missing 'name' attribute on x-let");
                 return error.MalformedElement;
-            if (ctx.getVar(name)) |value| {
-                try out.appendSlice(a, value);
+            };
+            const transform_spec = extractAttrValue(tag, "transform");
+
+            const content_start = tag_end + 1;
+            const close = std.mem.indexOf(u8, rest[content_start..], "</x-let>") orelse {
+                setErrorDetail(ctx, input, i, "unclosed x-let element");
+                return error.MalformedElement;
+            };
+            const body = rest[content_start .. content_start + close];
+
+            const rendered = try renderContent(a, body, ctx, resolver, depth);
+
+            if (transform_spec) |ts| {
+                const transformed = try applyTransforms(a, rendered, ts);
+                a.free(rendered);
+                try let_allocs.append(a, transformed);
+                try ctx.putVar(a, let_name, transformed);
+            } else {
+                try let_allocs.append(a, rendered);
+                try ctx.putVar(a, let_name, rendered);
             }
-            i += end_offset + 2;
+
+            i += content_start + close + "</x-let>".len;
+            continue;
+        }
+
+        if (std.mem.startsWith(u8, input[i..], "<x-comment")) {
+            const rest = input[i..];
+            const tag_end = findTagEnd(rest) orelse {
+                setErrorDetail(ctx, input, i, "unclosed x-comment tag");
+                return error.MalformedElement;
+            };
+            const is_self_closing = tag_end > 0 and rest[tag_end - 1] == '/';
+            if (is_self_closing) {
+                i += tag_end + 1;
+            } else {
+                const close = std.mem.indexOf(u8, rest[tag_end + 1 ..], "</x-comment>") orelse {
+                    setErrorDetail(ctx, input, i, "unclosed x-comment element");
+                    return error.MalformedElement;
+                };
+                i += tag_end + 1 + close + "</x-comment>".len;
+            }
             continue;
         }
 
@@ -190,11 +274,15 @@ fn renderContent(a: Allocator, input: []const u8, ctx: *const Context, resolver:
             std.mem.startsWith(u8, input[i..], "<x-attr/>"))
         {
             const rest = input[i..];
-            const end_offset = std.mem.indexOf(u8, rest, "/>") orelse
+            const end_offset = std.mem.indexOf(u8, rest, "/>") orelse {
+                setErrorDetail(ctx, input, i, "unclosed x-attr tag");
                 return error.MalformedElement;
+            };
             const tag = rest[0 .. end_offset + 2];
-            const name = extractAttrValue(tag, "name") orelse
+            const name = extractAttrValue(tag, "name") orelse {
+                setErrorDetail(ctx, input, i, "missing 'name' attribute on x-attr");
                 return error.MalformedElement;
+            };
             if (ctx.getAttr(name)) |value| {
                 try appendEscaped(a, &out, value);
             }
@@ -253,9 +341,12 @@ fn renderContent(a: Allocator, input: []const u8, ctx: *const Context, resolver:
     return out.toOwnedSlice(a);
 }
 
-fn renderSlot(a: Allocator, input: []const u8, start: usize, ctx: *const Context, resolver: *const Resolver, depth: usize, out: *std.ArrayList(u8)) RenderError!usize {
+fn renderSlot(a: Allocator, input: []const u8, start: usize, ctx: *Context, resolver: *const Resolver, depth: usize, out: *std.ArrayList(u8)) RenderError!usize {
     const rest = input[start..];
-    const tag_end = findTagEnd(rest) orelse return error.MalformedElement;
+    const tag_end = findTagEnd(rest) orelse {
+        setErrorDetail(ctx, input, start, "unclosed x-slot tag");
+        return error.MalformedElement;
+    };
     const is_self_closing = tag_end > 0 and rest[tag_end - 1] == '/';
 
     const indent = detectIndent(out.items);
@@ -274,8 +365,10 @@ fn renderSlot(a: Allocator, input: []const u8, start: usize, ctx: *const Context
     const tag = rest[0 .. tag_end + 1];
     const name = extractAttrValue(tag, "name") orelse "";
     const content_start = tag_end + 1;
-    const close_tag = std.mem.indexOf(u8, rest[content_start..], "</x-slot>") orelse
+    const close_tag = std.mem.indexOf(u8, rest[content_start..], "</x-slot>") orelse {
+        setErrorDetail(ctx, input, start, "unclosed x-slot element");
         return error.MalformedElement;
+    };
     const default_content = rest[content_start .. content_start + close_tag];
     const total_end = content_start + close_tag + "</x-slot>".len;
 
@@ -289,6 +382,70 @@ fn renderSlot(a: Allocator, input: []const u8, start: usize, ctx: *const Context
         try appendIndented(a, out, rendered, indent);
     }
     return start + total_end;
+}
+
+fn renderVarOrRaw(a: Allocator, input: []const u8, start: usize, ctx: *Context, resolver: *const Resolver, depth: usize, out: *std.ArrayList(u8), escape: bool) RenderError!usize {
+    const rest = input[start..];
+    const tag_end = findTagEnd(rest) orelse {
+        setErrorDetail(ctx, input, start, "unclosed tag");
+        return error.MalformedElement;
+    };
+    const is_self_closing = tag_end > 0 and rest[tag_end - 1] == '/';
+    const tag = rest[0 .. tag_end + 1];
+    const close_tag: []const u8 = if (escape) "</x-var>" else "</x-raw>";
+
+    const name = extractAttrValue(tag, "name") orelse {
+        setErrorDetail(ctx, input, start, "missing 'name' attribute on x-var/x-raw");
+        return error.MalformedElement;
+    };
+    const transform_spec = extractAttrValue(tag, "transform");
+
+    var consumed: usize = tag_end + 1;
+    var default_body: ?[]const u8 = null;
+
+    if (!is_self_closing) {
+        const content_start = tag_end + 1;
+        const close = std.mem.indexOf(u8, rest[content_start..], close_tag) orelse {
+            setErrorDetail(ctx, input, start, "unclosed x-var/x-raw element");
+            return error.MalformedElement;
+        };
+        default_body = rest[content_start .. content_start + close];
+        consumed = content_start + close + close_tag.len;
+    }
+
+    var value: []const u8 = "";
+    var value_allocated = false;
+
+    if (ctx.getVar(name)) |v| {
+        value = v;
+    } else if (default_body) |body| {
+        value = try renderContent(a, body, ctx, resolver, depth);
+        value_allocated = true;
+    } else if (transform_spec != null and hasDefaultTransform(transform_spec.?)) {
+        // default transform will handle the empty value
+    } else {
+        setErrorDetail(ctx, input, start, name);
+        return error.UndefinedVariable;
+    }
+    defer if (value_allocated) a.free(value);
+
+    if (transform_spec) |ts| {
+        const transformed = try applyTransforms(a, value, ts);
+        defer a.free(transformed);
+        if (escape) {
+            try appendEscaped(a, out, transformed);
+        } else {
+            try out.appendSlice(a, transformed);
+        }
+    } else if (value_allocated) {
+        try out.appendSlice(a, value);
+    } else if (escape) {
+        try appendEscaped(a, out, value);
+    } else {
+        try out.appendSlice(a, value);
+    }
+
+    return start + consumed;
 }
 
 fn appendIndented(a: Allocator, out: *std.ArrayList(u8), content: []const u8, indent: []const u8) RenderError!void {
@@ -325,13 +482,18 @@ fn appendIndented(a: Allocator, out: *std.ArrayList(u8), content: []const u8, in
     }
 }
 
-fn renderInclude(a: Allocator, input: []const u8, start: usize, ctx: *const Context, resolver: *const Resolver, depth: usize, out: *std.ArrayList(u8)) RenderError!usize {
+fn renderInclude(a: Allocator, input: []const u8, start: usize, ctx: *Context, resolver: *const Resolver, depth: usize, out: *std.ArrayList(u8)) RenderError!usize {
     const rest = input[start..];
-    const tag_end = findTagEnd(rest) orelse return error.MalformedElement;
+    const tag_end = findTagEnd(rest) orelse {
+        setErrorDetail(ctx, input, start, "unclosed x-include tag");
+        return error.MalformedElement;
+    };
     const is_self_closing = tag_end > 0 and rest[tag_end - 1] == '/';
     const tag = rest[0 .. tag_end + 1];
-    const tmpl_name = extractAttrValue(tag, "template") orelse
+    const tmpl_name = extractAttrValue(tag, "template") orelse {
+        setErrorDetail(ctx, input, start, "missing 'template' attribute on x-include");
         return error.MalformedElement;
+    };
 
     var inc_attrs = try parseTagAttrs(a, tag);
     defer inc_attrs.deinit(a);
@@ -342,8 +504,10 @@ fn renderInclude(a: Allocator, input: []const u8, start: usize, ctx: *const Cont
 
     if (!is_self_closing) {
         const content_start = tag_end + 1;
-        const close = std.mem.indexOf(u8, rest[content_start..], "</x-include>") orelse
+        const close = std.mem.indexOf(u8, rest[content_start..], "</x-include>") orelse {
+            setErrorDetail(ctx, input, start, "unclosed x-include element");
             return error.MalformedElement;
+        };
         const raw_body = rest[content_start .. content_start + close];
         const strip_result = try stripCommonIndent(a, raw_body);
         body = strip_result.slice;
@@ -352,12 +516,25 @@ fn renderInclude(a: Allocator, input: []const u8, start: usize, ctx: *const Cont
     }
     defer if (body_allocated) a.free(body);
 
-    const tmpl_content = resolver.get(tmpl_name) orelse return error.TemplateNotFound;
+    const tmpl_content = resolver.get(tmpl_name) orelse {
+        setErrorDetail(ctx, input, start, tmpl_name);
+        return error.TemplateNotFound;
+    };
 
     var child_slots: std.StringArrayHashMapUnmanaged([]const u8) = .{};
     defer child_slots.deinit(a);
+    var slot_allocs: std.ArrayList([]const u8) = .{};
+    defer {
+        for (slot_allocs.items) |s| a.free(s);
+        slot_allocs.deinit(a);
+    }
+
     if (body.len > 0) {
-        try child_slots.put(a, "", body);
+        if (std.mem.indexOf(u8, body, "<x-define") != null) {
+            try parseIncludeBody(a, body, &child_slots, &slot_allocs);
+        } else {
+            try child_slots.put(a, "", body);
+        }
     }
 
     var child_ctx: Context = .{
@@ -366,6 +543,7 @@ fn renderInclude(a: Allocator, input: []const u8, start: usize, ctx: *const Cont
         .slots = child_slots,
         .collections = ctx.collections,
         .dev_mode = ctx.dev_mode,
+        .err_detail = ctx.err_detail,
     };
 
     const indent = detectIndent(out.items);
@@ -414,14 +592,19 @@ fn parseTagAttrs(a: Allocator, tag: []const u8) RenderError!std.StringArrayHashM
     return attrs;
 }
 
-fn renderConditional(a: Allocator, input: []const u8, start: usize, ctx: *const Context, resolver: *const Resolver, depth: usize, out: *std.ArrayList(u8)) RenderError!usize {
+fn renderConditional(a: Allocator, input: []const u8, start: usize, ctx: *Context, resolver: *const Resolver, depth: usize, out: *std.ArrayList(u8)) RenderError!usize {
     const rest = input[start..];
-    const tag_end = findTagEnd(rest) orelse return error.MalformedElement;
+    const tag_end = findTagEnd(rest) orelse {
+        setErrorDetail(ctx, input, start, "unclosed x-if tag");
+        return error.MalformedElement;
+    };
     const if_tag = rest[0 .. tag_end + 1];
     const body_start = tag_end + 1;
 
-    const if_close = findMatchingClose(rest[body_start..], "<x-if", "</x-if>") orelse
+    const if_close = findMatchingClose(rest[body_start..], "<x-if", "</x-if>") orelse {
+        setErrorDetail(ctx, input, start, "unclosed x-if element");
         return error.MalformedElement;
+    };
     const full_body = rest[body_start .. body_start + if_close];
     const total_end = start + body_start + if_close + "</x-if>".len;
 
@@ -640,9 +823,12 @@ fn reindent(a: Allocator, content: []const u8, indent: []const u8) RenderError![
     return out.toOwnedSlice(a);
 }
 
-fn renderFor(a: Allocator, input: []const u8, start: usize, ctx: *const Context, resolver: *const Resolver, depth: usize, out: *std.ArrayList(u8)) RenderError!usize {
+fn renderFor(a: Allocator, input: []const u8, start: usize, ctx: *Context, resolver: *const Resolver, depth: usize, out: *std.ArrayList(u8)) RenderError!usize {
     const rest = input[start..];
-    const tag_end = findTagEnd(rest) orelse return error.MalformedElement;
+    const tag_end = findTagEnd(rest) orelse {
+        setErrorDetail(ctx, input, start, "unclosed x-for tag");
+        return error.MalformedElement;
+    };
     const tag = rest[0 .. tag_end + 1];
 
     const item_prefix = blk: {
@@ -661,15 +847,38 @@ fn renderFor(a: Allocator, input: []const u8, start: usize, ctx: *const Context,
         break :blk tag[after_in..end];
     };
 
+    const loop_alias: ?[]const u8 = blk: {
+        const in_tok = std.mem.indexOf(u8, tag, " in ") orelse break :blk null;
+        const as_tok = std.mem.indexOfPos(u8, tag, in_tok + 4, " as ") orelse break :blk null;
+        const after_as = as_tok + 4;
+        var alias_end = after_as;
+        while (alias_end < tag.len and tag[alias_end] != ' ' and
+            tag[alias_end] != '>' and tag[alias_end] != '/') : (alias_end += 1)
+        {}
+        if (alias_end > after_as) break :blk tag[after_as..alias_end];
+        break :blk null;
+    };
+
     const sort_field = extractAttrValue(tag, "sort");
     const order_desc = if (extractAttrValue(tag, "order")) |o|
         std.mem.eql(u8, o, "desc")
     else
         false;
 
+    const limit_val = if (extractAttrValue(tag, "limit")) |v|
+        std.fmt.parseInt(usize, v, 10) catch return error.MalformedElement
+    else
+        null;
+    const offset_val = if (extractAttrValue(tag, "offset")) |v|
+        std.fmt.parseInt(usize, v, 10) catch return error.MalformedElement
+    else
+        null;
+
     const body_start = start + tag_end + 1;
-    const close_offset = findMatchingClose(input[body_start..], "<x-for ", "</x-for>") orelse
+    const close_offset = findMatchingClose(input[body_start..], "<x-for ", "</x-for>") orelse {
+        setErrorDetail(ctx, input, start, "unclosed x-for element");
         return error.MalformedElement;
+    };
     const body = input[body_start .. body_start + close_offset];
     const after_close = body_start + close_offset + "</x-for>".len;
 
@@ -705,12 +914,17 @@ fn renderFor(a: Allocator, input: []const u8, start: usize, ctx: *const Context,
         std.mem.sort(Entry, items, Sort{ .field_name = field, .descending = order_desc }, Sort.lessThan);
     }
 
-    for (items) |entry| {
+    const off = if (offset_val) |o| @min(o, items.len) else 0;
+    const sliced = items[off..];
+    const final = if (limit_val) |l| sliced[0..@min(l, sliced.len)] else sliced;
+
+    for (final, 0..) |entry, idx| {
         var child_ctx: Context = .{
             .attrs = ctx.attrs,
             .slots = ctx.slots,
             .collections = ctx.collections,
             .dev_mode = ctx.dev_mode,
+            .err_detail = ctx.err_detail,
         };
 
         var child_vars: @TypeOf(ctx.vars) = .{};
@@ -731,6 +945,21 @@ fn renderFor(a: Allocator, input: []const u8, start: usize, ctx: *const Context,
             try allocated_keys.append(a, prefixed);
             try child_vars.put(a, prefixed, kv.value_ptr.*);
         }
+
+        if (loop_alias) |alias| {
+            const idx_key = try std.fmt.allocPrint(a, "{s}.index", .{alias});
+            try allocated_keys.append(a, idx_key);
+            const idx_str = try std.fmt.allocPrint(a, "{d}", .{idx});
+            try allocated_keys.append(a, idx_str);
+            try child_vars.put(a, idx_key, idx_str);
+
+            const num_key = try std.fmt.allocPrint(a, "{s}.number", .{alias});
+            try allocated_keys.append(a, num_key);
+            const num_str = try std.fmt.allocPrint(a, "{d}", .{idx + 1});
+            try allocated_keys.append(a, num_str);
+            try child_vars.put(a, num_key, num_str);
+        }
+
         child_ctx.vars = child_vars;
         defer child_vars.deinit(a);
 
@@ -794,6 +1023,30 @@ fn skipWhitespace(input: []const u8) usize {
     return i;
 }
 
+fn computeLineCol(input: []const u8, pos: usize) struct { line: usize, column: usize } {
+    var line: usize = 1;
+    var col: usize = 1;
+    const limit = @min(pos, input.len);
+    for (input[0..limit]) |c| {
+        if (c == '\n') {
+            line += 1;
+            col = 1;
+        } else {
+            col += 1;
+        }
+    }
+    return .{ .line = line, .column = col };
+}
+
+fn setErrorDetail(ctx: *Context, input: []const u8, pos: usize, message: []const u8) void {
+    if (ctx.err_detail) |ed| {
+        const lc = computeLineCol(input, pos);
+        ed.line = lc.line;
+        ed.column = lc.column;
+        ed.message = message;
+    }
+}
+
 fn parseDefines(a: Allocator, input: []const u8, slots: *std.StringArrayHashMapUnmanaged([]const u8), allocs: *std.ArrayList([]const u8)) RenderError!void {
     var i: usize = 0;
     while (i < input.len) {
@@ -804,7 +1057,8 @@ fn parseDefines(a: Allocator, input: []const u8, slots: *std.StringArrayHashMapU
         if (std.mem.startsWith(u8, input[i..], "<x-define ")) {
             const rest = input[i..];
             const tag_end = findTagEnd(rest) orelse return error.MalformedElement;
-            const slot_name = extractAttrValue(rest[0 .. tag_end + 1], "slot") orelse
+            const slot_name = extractAttrValue(rest[0 .. tag_end + 1], "name") orelse
+                extractAttrValue(rest[0 .. tag_end + 1], "slot") orelse
                 return error.MalformedElement;
             const content_start = tag_end + 1;
             const close = std.mem.indexOf(u8, rest[content_start..], "</x-define>") orelse
@@ -820,6 +1074,55 @@ fn parseDefines(a: Allocator, input: []const u8, slots: *std.StringArrayHashMapU
             i += 1;
         }
     }
+}
+
+fn parseIncludeBody(
+    a: Allocator,
+    body: []const u8,
+    slots: *std.StringArrayHashMapUnmanaged([]const u8),
+    allocs: *std.ArrayList([]const u8),
+) RenderError!void {
+    var anon_parts: std.ArrayList(u8) = .{};
+    errdefer anon_parts.deinit(a);
+
+    var i: usize = 0;
+    while (i < body.len) {
+        if (std.mem.startsWith(u8, body[i..], "<x-define ") or
+            std.mem.startsWith(u8, body[i..], "<x-define>"))
+        {
+            const rest = body[i..];
+            const tag_end = findTagEnd(rest) orelse return error.MalformedElement;
+            const tag = rest[0 .. tag_end + 1];
+            const slot_name = extractAttrValue(tag, "name") orelse
+                extractAttrValue(tag, "slot") orelse
+                return error.MalformedElement;
+
+            if (slots.contains(slot_name)) return error.DuplicateSlotDefinition;
+
+            const content_start = tag_end + 1;
+            const close = std.mem.indexOf(u8, rest[content_start..], "</x-define>") orelse
+                return error.MalformedElement;
+            const raw_content = rest[content_start .. content_start + close];
+            const result = try stripCommonIndent(a, raw_content);
+            if (result.allocated) {
+                try allocs.append(a, result.slice);
+            }
+            try slots.put(a, slot_name, result.slice);
+            i += content_start + close + "</x-define>".len;
+        } else {
+            try anon_parts.append(a, body[i]);
+            i += 1;
+        }
+    }
+
+    const trimmed = std.mem.trim(u8, anon_parts.items, " \t\r\n");
+    if (trimmed.len > 0) {
+        const anon_copy = try a.dupe(u8, trimmed);
+        try allocs.append(a, anon_copy);
+        try slots.put(a, "", anon_copy);
+    }
+
+    anon_parts.deinit(a);
 }
 
 fn findTagEnd(input: []const u8) ?usize {
@@ -852,6 +1155,123 @@ fn extractAttrValue(tag: []const u8, name: []const u8) ?[]const u8 {
     return null;
 }
 
+fn hasDefaultTransform(transform_spec: []const u8) bool {
+    var pipe_iter = std.mem.splitScalar(u8, transform_spec, '|');
+    while (pipe_iter.next()) |t| {
+        if (std.mem.startsWith(u8, t, "default:") or std.mem.eql(u8, t, "default")) {
+            return true;
+        }
+    }
+    return false;
+}
+
+fn applyTransforms(a: Allocator, value: []const u8, transform_spec: []const u8) RenderError![]u8 {
+    var current = try a.dupe(u8, value);
+    errdefer a.free(current);
+
+    var pipe_iter = std.mem.splitScalar(u8, transform_spec, '|');
+    while (pipe_iter.next()) |transform| {
+        if (transform.len == 0) continue;
+
+        var colon_iter = std.mem.splitScalar(u8, transform, ':');
+        const name = colon_iter.next().?;
+
+        const next = try applyOneTransform(a, current, name, &colon_iter);
+        if (next.ptr != current.ptr) {
+            a.free(current);
+        }
+        current = next;
+    }
+
+    return current;
+}
+
+fn applyOneTransform(a: Allocator, value: []const u8, name: []const u8, args: *std.mem.SplitIterator(u8, .scalar)) RenderError![]u8 {
+    if (std.mem.eql(u8, name, "upper")) {
+        const buf = try a.alloc(u8, value.len);
+        for (buf, value) |*b, c| {
+            b.* = std.ascii.toUpper(c);
+        }
+        return buf;
+    }
+    if (std.mem.eql(u8, name, "lower")) {
+        const buf = try a.alloc(u8, value.len);
+        for (buf, value) |*b, c| {
+            b.* = std.ascii.toLower(c);
+        }
+        return buf;
+    }
+    if (std.mem.eql(u8, name, "capitalize")) {
+        const buf = try a.alloc(u8, value.len);
+        var prev_space = true;
+        for (buf, value) |*b, c| {
+            if (prev_space and std.ascii.isAlphabetic(c)) {
+                b.* = std.ascii.toUpper(c);
+            } else {
+                b.* = c;
+            }
+            prev_space = c == ' ' or c == '\t' or c == '\n';
+        }
+        return buf;
+    }
+    if (std.mem.eql(u8, name, "trim")) {
+        const trimmed = std.mem.trim(u8, value, " \t\n\r");
+        return try a.dupe(u8, trimmed);
+    }
+    if (std.mem.eql(u8, name, "slugify")) {
+        var out: std.ArrayList(u8) = .{};
+        errdefer out.deinit(a);
+        var prev_hyphen = true;
+        for (value) |c| {
+            if (std.ascii.isAlphanumeric(c)) {
+                try out.append(a, std.ascii.toLower(c));
+                prev_hyphen = false;
+            } else if (!prev_hyphen) {
+                try out.append(a, '-');
+                prev_hyphen = true;
+            }
+        }
+        if (out.items.len > 0 and out.items[out.items.len - 1] == '-') {
+            _ = out.pop();
+        }
+        return try out.toOwnedSlice(a);
+    }
+    if (std.mem.eql(u8, name, "truncate")) {
+        const n_str = args.next() orelse return error.MalformedElement;
+        const n = std.fmt.parseInt(usize, n_str, 10) catch return error.MalformedElement;
+        if (value.len <= n) return try a.dupe(u8, value);
+        const buf = try a.alloc(u8, n + 3);
+        @memcpy(buf[0..n], value[0..n]);
+        @memcpy(buf[n .. n + 3], "...");
+        return buf;
+    }
+    if (std.mem.eql(u8, name, "replace")) {
+        const old = args.next() orelse return error.MalformedElement;
+        const new = args.next() orelse "";
+        var out: std.ArrayList(u8) = .{};
+        errdefer out.deinit(a);
+        var i: usize = 0;
+        while (i < value.len) {
+            if (old.len > 0 and i + old.len <= value.len and
+                std.mem.eql(u8, value[i .. i + old.len], old))
+            {
+                try out.appendSlice(a, new);
+                i += old.len;
+            } else {
+                try out.append(a, value[i]);
+                i += 1;
+            }
+        }
+        return try out.toOwnedSlice(a);
+    }
+    if (std.mem.eql(u8, name, "default")) {
+        const def = args.next() orelse "";
+        if (value.len == 0) return try a.dupe(u8, def);
+        return try a.dupe(u8, value);
+    }
+    return error.MalformedElement;
+}
+
 fn appendEscaped(a: Allocator, out: *std.ArrayList(u8), value: []const u8) !void {
     for (value) |c| {
         switch (c) {
@@ -864,7 +1284,7 @@ fn appendEscaped(a: Allocator, out: *std.ArrayList(u8), value: []const u8) !void
     }
 }
 
-fn renderBoundTag(a: Allocator, tag: []const u8, ctx: *const Context, out: *std.ArrayList(u8)) RenderError!void {
+fn renderBoundTag(a: Allocator, tag: []const u8, ctx: *Context, out: *std.ArrayList(u8)) RenderError!void {
     var i: usize = 0;
     while (i < tag.len) {
         if (i > 0 and tag[i] == ' ' and i + 1 < tag.len) {
@@ -932,7 +1352,7 @@ test "var_basic" {
     try testing.expectEqualStrings("<p>Home</p>", result);
 }
 
-test "var_missing" {
+test "var_missing_is_error" {
     const a = testing.allocator;
     var ctx: Context = .{};
     defer ctx.deinit(a);
@@ -940,10 +1360,8 @@ test "var_missing" {
     var resolver: Resolver = .{};
     defer resolver.deinit(a);
 
-    const result = try render(a, "<p><x-var name=\"title\" /></p>", &ctx, &resolver);
-    defer a.free(result);
-
-    try testing.expectEqualStrings("<p></p>", result);
+    const result = render(a, "<p><x-var name=\"title\" /></p>", &ctx, &resolver);
+    try testing.expectError(error.UndefinedVariable, result);
 }
 
 test "var_html_escaped" {
@@ -1912,15 +2330,14 @@ test "raw_html_not_escaped" {
     try testing.expectEqualStrings("<strong>bold &amp; stuff</strong>", result);
 }
 
-test "raw_missing_is_empty" {
+test "raw_missing_is_error" {
     const a = testing.allocator;
     var resolver: Resolver = .{};
     defer resolver.deinit(a);
     var ctx: Context = .{};
     defer ctx.deinit(a);
-    const result = try render(a, "before<x-raw name=\"missing\" />after", &ctx, &resolver);
-    defer a.free(result);
-    try testing.expectEqualStrings("beforeafter", result);
+    const result = render(a, "before<x-raw name=\"missing\" />after", &ctx, &resolver);
+    try testing.expectError(error.UndefinedVariable, result);
 }
 
 test "raw_in_for_loop" {
@@ -2269,4 +2686,1065 @@ test "error_include_no_template_attr" {
 
     const result = render(a, "<x-include />", &ctx, &resolver);
     try testing.expectError(error.MalformedElement, result);
+}
+
+// ---------------------------------------------------------------------------
+// x-comment tests
+// ---------------------------------------------------------------------------
+
+test "comment_block_stripped" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = try render(a, "<x-comment>this should not appear</x-comment>", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("", result);
+}
+
+test "comment_self_closing_stripped" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = try render(a, "<x-comment />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("", result);
+}
+
+test "comment_nested_elements_not_rendered" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "title", "Hello");
+
+    const result = try render(a, "<x-comment><x-var name=\"title\" />should not appear</x-comment>", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("", result);
+}
+
+test "comment_surrounding_content_preserved" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = try render(a, "before<x-comment>hidden</x-comment>after", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("beforeafter", result);
+}
+
+test "error_unclosed_comment" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = render(a, "<x-comment>no closing tag", &ctx, &resolver);
+    try testing.expectError(error.MalformedElement, result);
+}
+
+// ---------------------------------------------------------------------------
+// x-var / x-raw default value + strict mode tests
+// ---------------------------------------------------------------------------
+
+test "var_default_used_when_missing" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = try render(a, "<x-var name=\"page.author\">Anonymous</x-var>", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("Anonymous", result);
+}
+
+test "var_default_not_used_when_exists" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "page.author", "QuiteClose");
+
+    const result = try render(a, "<x-var name=\"page.author\">Anonymous</x-var>", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("QuiteClose", result);
+}
+
+test "raw_default_used_when_missing" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = try render(a, "<x-raw name=\"content\"><p>No content</p></x-raw>", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("<p>No content</p>", result);
+}
+
+test "raw_default_not_used_when_exists" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "content", "<p>Real content</p>");
+
+    const result = try render(a, "<x-raw name=\"content\"><p>No content</p></x-raw>", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("<p>Real content</p>", result);
+}
+
+test "var_default_with_nested_elements" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "fallback_name", "World");
+
+    const result = try render(a, "<x-var name=\"greeting\">Hello <x-var name=\"fallback_name\" /></x-var>", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("Hello World", result);
+}
+
+test "var_empty_default_no_error" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = try render(a, "before<x-var name=\"x\"></x-var>after", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("beforeafter", result);
+}
+
+test "var_default_value_is_not_escaped" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = try render(a, "<x-var name=\"x\"><em>bold</em></x-var>", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("<em>bold</em>", result);
+}
+
+test "var_existing_value_is_escaped" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "x", "<em>bold</em>");
+
+    const result = try render(a, "<x-var name=\"x\">default</x-var>", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("&lt;em&gt;bold&lt;/em&gt;", result);
+}
+
+test "strict_var_exists_no_error" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "title", "Home");
+
+    const result = try render(a, "<x-var name=\"title\" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("Home", result);
+}
+
+test "strict_raw_missing_is_error" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = render(a, "<x-raw name=\"missing\" />", &ctx, &resolver);
+    try testing.expectError(error.UndefinedVariable, result);
+}
+
+test "attr_binding_optional_on_missing" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = try render(a, "<a x-var:href=\"url\">link</a>", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("<a>link</a>", result);
+}
+
+test "error_unclosed_var_block" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = render(a, "<x-var name=\"x\">no close", &ctx, &resolver);
+    try testing.expectError(error.MalformedElement, result);
+}
+
+test "error_unclosed_raw_block" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = render(a, "<x-raw name=\"x\">no close", &ctx, &resolver);
+    try testing.expectError(error.MalformedElement, result);
+}
+
+test "error_var_block_no_name" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = render(a, "<x-var>fallback</x-var>", &ctx, &resolver);
+    try testing.expectError(error.MalformedElement, result);
+}
+
+// ---------------------------------------------------------------------------
+// x-for loop alias (as keyword) + index/number + limit/offset tests
+// ---------------------------------------------------------------------------
+
+test "for_as_index_and_number" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    var entries: [3]Entry = .{ .{}, .{}, .{} };
+    try entries[0].values.put(a, "name", "A");
+    try entries[1].values.put(a, "name", "B");
+    try entries[2].values.put(a, "name", "C");
+    defer for (&entries) |*e| e.values.deinit(a);
+    try ctx.putCollection(a, "items", entries[0..]);
+
+    const result = try render(a,
+        \\<x-for item in items as loop><x-var name="loop.index" />:<x-var name="loop.number" />:<x-var name="item.name" />,</x-for>
+    , &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("0:1:A,1:2:B,2:3:C,", result);
+}
+
+test "for_as_coexists_with_item_prefix" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    var entries: [2]Entry = .{ .{}, .{} };
+    try entries[0].values.put(a, "label", "X");
+    try entries[1].values.put(a, "label", "Y");
+    defer for (&entries) |*e| e.values.deinit(a);
+    try ctx.putCollection(a, "things", entries[0..]);
+
+    const result = try render(a,
+        \\<x-for thing in things as i>#<x-var name="i.number" />:<x-var name="thing.label" /> </x-for>
+    , &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("#1:X #2:Y ", result);
+}
+
+test "for_without_as_backward_compatible" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    var entries: [2]Entry = .{ .{}, .{} };
+    try entries[0].values.put(a, "v", "a");
+    try entries[1].values.put(a, "v", "b");
+    defer for (&entries) |*e| e.values.deinit(a);
+    try ctx.putCollection(a, "items", entries[0..]);
+
+    const result = try render(a,
+        \\<x-for item in items><x-var name="item.v" /></x-for>
+    , &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("ab", result);
+}
+
+test "for_nested_loops_independent_aliases" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    var rows: [2]Entry = .{ .{}, .{} };
+    try rows[0].values.put(a, "name", "R");
+    try rows[1].values.put(a, "name", "S");
+    defer for (&rows) |*e| e.values.deinit(a);
+    try ctx.putCollection(a, "rows", rows[0..]);
+
+    var cols: [2]Entry = .{ .{}, .{} };
+    try cols[0].values.put(a, "name", "X");
+    try cols[1].values.put(a, "name", "Y");
+    defer for (&cols) |*e| e.values.deinit(a);
+    try ctx.putCollection(a, "cols", cols[0..]);
+
+    const result = try render(a,
+        \\<x-for row in rows as outer><x-for col in cols as inner><x-var name="outer.number" />.<x-var name="inner.number" /> </x-for></x-for>
+    , &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("1.1 1.2 2.1 2.2 ", result);
+}
+
+test "for_limit_only" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    var entries: [5]Entry = .{ .{}, .{}, .{}, .{}, .{} };
+    try entries[0].values.put(a, "v", "1");
+    try entries[1].values.put(a, "v", "2");
+    try entries[2].values.put(a, "v", "3");
+    try entries[3].values.put(a, "v", "4");
+    try entries[4].values.put(a, "v", "5");
+    defer for (&entries) |*e| e.values.deinit(a);
+    try ctx.putCollection(a, "items", entries[0..]);
+
+    const result = try render(a,
+        \\<x-for item in items limit="2"><x-var name="item.v" /></x-for>
+    , &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("12", result);
+}
+
+test "for_offset_only" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    var entries: [5]Entry = .{ .{}, .{}, .{}, .{}, .{} };
+    try entries[0].values.put(a, "v", "1");
+    try entries[1].values.put(a, "v", "2");
+    try entries[2].values.put(a, "v", "3");
+    try entries[3].values.put(a, "v", "4");
+    try entries[4].values.put(a, "v", "5");
+    defer for (&entries) |*e| e.values.deinit(a);
+    try ctx.putCollection(a, "items", entries[0..]);
+
+    const result = try render(a,
+        \\<x-for item in items offset="2"><x-var name="item.v" /></x-for>
+    , &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("345", result);
+}
+
+test "for_limit_and_offset" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    var entries: [5]Entry = .{ .{}, .{}, .{}, .{}, .{} };
+    try entries[0].values.put(a, "v", "1");
+    try entries[1].values.put(a, "v", "2");
+    try entries[2].values.put(a, "v", "3");
+    try entries[3].values.put(a, "v", "4");
+    try entries[4].values.put(a, "v", "5");
+    defer for (&entries) |*e| e.values.deinit(a);
+    try ctx.putCollection(a, "items", entries[0..]);
+
+    const result = try render(a,
+        \\<x-for item in items limit="2" offset="1"><x-var name="item.v" /></x-for>
+    , &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("23", result);
+}
+
+test "for_offset_beyond_items" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    var entries: [2]Entry = .{ .{}, .{} };
+    try entries[0].values.put(a, "v", "1");
+    try entries[1].values.put(a, "v", "2");
+    defer for (&entries) |*e| e.values.deinit(a);
+    try ctx.putCollection(a, "items", entries[0..]);
+
+    const result = try render(a,
+        \\<x-for item in items offset="10"><x-var name="item.v" /></x-for>
+    , &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("", result);
+}
+
+test "for_limit_zero" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    var entries: [2]Entry = .{ .{}, .{} };
+    try entries[0].values.put(a, "v", "1");
+    try entries[1].values.put(a, "v", "2");
+    defer for (&entries) |*e| e.values.deinit(a);
+    try ctx.putCollection(a, "items", entries[0..]);
+
+    const result = try render(a,
+        \\<x-for item in items limit="0"><x-var name="item.v" /></x-for>
+    , &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("", result);
+}
+
+test "for_all_attrs_combined" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    var entries: [5]Entry = .{ .{}, .{}, .{}, .{}, .{} };
+    try entries[0].values.put(a, "name", "E");
+    try entries[1].values.put(a, "name", "A");
+    try entries[2].values.put(a, "name", "D");
+    try entries[3].values.put(a, "name", "B");
+    try entries[4].values.put(a, "name", "C");
+    defer for (&entries) |*e| e.values.deinit(a);
+    try ctx.putCollection(a, "items", entries[0..]);
+
+    const result = try render(a,
+        \\<x-for item in items as loop sort="name" limit="3" offset="1"><x-var name="loop.number" />:<x-var name="item.name" /> </x-for>
+    , &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("1:B 2:C 3:D ", result);
+}
+
+test "error_for_limit_non_numeric" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = render(a,
+        \\<x-for item in items limit="abc">body</x-for>
+    , &ctx, &resolver);
+    try testing.expectError(error.MalformedElement, result);
+}
+
+// ---------------------------------------------------------------------------
+// Transform tests
+// ---------------------------------------------------------------------------
+
+test "transform_upper" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "v", "hello");
+
+    const result = try render(a, "<x-var name=\"v\" transform=\"upper\" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("HELLO", result);
+}
+
+test "transform_lower" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "v", "HELLO");
+
+    const result = try render(a, "<x-var name=\"v\" transform=\"lower\" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("hello", result);
+}
+
+test "transform_capitalize" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "v", "hello world");
+
+    const result = try render(a, "<x-var name=\"v\" transform=\"capitalize\" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("Hello World", result);
+}
+
+test "transform_slugify" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "v", "Hello World!");
+
+    const result = try render(a, "<x-var name=\"v\" transform=\"slugify\" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("hello-world", result);
+}
+
+test "transform_truncate" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "v", "Hello World");
+
+    const result = try render(a, "<x-var name=\"v\" transform=\"truncate:5\" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("Hello...", result);
+}
+
+test "transform_truncate_short_unchanged" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "v", "Hi");
+
+    const result = try render(a, "<x-var name=\"v\" transform=\"truncate:5\" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("Hi", result);
+}
+
+test "transform_replace" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "v", "a-b-c");
+
+    const result = try render(a, "<x-var name=\"v\" transform=\"replace:-: \" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("a b c", result);
+}
+
+test "transform_default_on_missing" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = try render(a, "<x-var name=\"missing\" transform=\"default:Anonymous\" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("Anonymous", result);
+}
+
+test "transform_trim" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "v", "  hello  ");
+
+    const result = try render(a, "<x-var name=\"v\" transform=\"trim\" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("hello", result);
+}
+
+test "transform_chain_replace_capitalize" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "v", "hello-world");
+
+    const result = try render(a, "<x-var name=\"v\" transform=\"replace:-: |capitalize\" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("Hello World", result);
+}
+
+test "transform_chain_three" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "v", "  Hello World  ");
+
+    const result = try render(a, "<x-var name=\"v\" transform=\"trim|lower|slugify\" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("hello-world", result);
+}
+
+test "transform_on_raw" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "v", "hello");
+
+    const result = try render(a, "<x-raw name=\"v\" transform=\"upper\" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("HELLO", result);
+}
+
+test "transform_on_var_escapes_after" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "v", "a&b");
+
+    const result = try render(a, "<x-var name=\"v\" transform=\"upper\" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("A&amp;B", result);
+}
+
+test "transform_empty_value" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "v", "");
+
+    const result = try render(a, "<x-var name=\"v\" transform=\"upper\" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("", result);
+}
+
+test "error_transform_truncate_non_numeric" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "v", "hello");
+
+    const result = render(a, "<x-var name=\"v\" transform=\"truncate:abc\" />", &ctx, &resolver);
+    try testing.expectError(error.MalformedElement, result);
+}
+
+test "error_transform_unknown" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "v", "hello");
+
+    const result = render(a, "<x-var name=\"v\" transform=\"nonexistent\" />", &ctx, &resolver);
+    try testing.expectError(error.MalformedElement, result);
+}
+
+// ---------------------------------------------------------------------------
+// x-let tests
+// ---------------------------------------------------------------------------
+
+test "let_basic_capture" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = try render(a, "<x-let name=\"x\">hello</x-let><x-var name=\"x\" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("hello", result);
+}
+
+test "let_capture_with_nested_elements" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "name", "World");
+
+    const result = try render(a, "<x-let name=\"greeting\">Hello <x-var name=\"name\" />!</x-let><x-var name=\"greeting\" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("Hello World!", result);
+}
+
+test "let_capture_with_transform" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = try render(a, "<x-let name=\"slug\" transform=\"slugify\">Hello World</x-let><x-var name=\"slug\" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("hello-world", result);
+}
+
+test "let_usable_in_subsequent_content" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = try render(a, "<x-let name=\"who\">World</x-let>Hello <x-var name=\"who\" />!", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("Hello World!", result);
+}
+
+test "let_chained_transforms" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = try render(a, "<x-let name=\"v\" transform=\"trim|upper\">  hello  </x-let><x-var name=\"v\" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("HELLO", result);
+}
+
+test "let_in_for_scoped_to_iteration" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    var entries: [2]Entry = .{ .{}, .{} };
+    try entries[0].values.put(a, "name", "alice");
+    try entries[1].values.put(a, "name", "bob");
+    defer for (&entries) |*e| e.values.deinit(a);
+    try ctx.putCollection(a, "users", entries[0..]);
+
+    const result = try render(a,
+        \\<x-for user in users><x-let name="upper_name" transform="upper"><x-var name="user.name" /></x-let><x-var name="upper_name" /> </x-for>
+    , &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("ALICE BOB ", result);
+}
+
+test "let_overrides_existing_var" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+    try ctx.putVar(a, "x", "old");
+
+    const result = try render(a, "<x-let name=\"x\">new</x-let><x-var name=\"x\" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("new", result);
+}
+
+test "let_visible_to_include" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    try resolver.put(a, "show.html", "<x-var name=\"computed\" />");
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = try render(a, "<x-let name=\"computed\">DERIVED</x-let><x-include template=\"show.html\" />", &ctx, &resolver);
+    defer a.free(result);
+    try testing.expectEqualStrings("DERIVED", result);
+}
+
+test "error_let_no_name" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = render(a, "<x-let>body</x-let>", &ctx, &resolver);
+    try testing.expectError(error.MalformedElement, result);
+}
+
+test "error_let_unclosed" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = render(a, "<x-let name=\"x\">no close", &ctx, &resolver);
+    try testing.expectError(error.MalformedElement, result);
+}
+
+// ---------------------------------------------------------------------------
+// Named slots in x-include
+// ---------------------------------------------------------------------------
+
+test "include_named_slot_single" {
+    const a = testing.allocator;
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    try resolver.put(a, "card.html", "<div><h2><x-slot name=\"title\" /></h2></div>");
+
+    const result = try render(
+        a,
+        "<x-include template=\"card.html\"><x-define name=\"title\">My Title</x-define></x-include>",
+        &ctx,
+        &resolver,
+    );
+    defer a.free(result);
+    try testing.expectEqualStrings("<div><h2>My Title</h2></div>", result);
+}
+
+test "include_named_slot_plus_anonymous" {
+    const a = testing.allocator;
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    try resolver.put(a, "card.html", "<div><h2><x-slot name=\"title\" /></h2><x-slot /></div>");
+
+    const result = try render(
+        a,
+        "<x-include template=\"card.html\"><x-define name=\"title\">Card Title</x-define><p>Body content</p></x-include>",
+        &ctx,
+        &resolver,
+    );
+    defer a.free(result);
+    try testing.expectEqualStrings("<div><h2>Card Title</h2><p>Body content</p></div>", result);
+}
+
+test "include_multiple_named_slots" {
+    const a = testing.allocator;
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    try resolver.put(a, "page.html", "<header><x-slot name=\"header\" /></header><main><x-slot name=\"body\" /></main>");
+
+    const result = try render(
+        a,
+        "<x-include template=\"page.html\"><x-define name=\"header\">Nav</x-define><x-define name=\"body\"><p>Content</p></x-define></x-include>",
+        &ctx,
+        &resolver,
+    );
+    defer a.free(result);
+    try testing.expectEqualStrings("<header>Nav</header><main><p>Content</p></main>", result);
+}
+
+test "include_named_slot_only_no_anonymous" {
+    const a = testing.allocator;
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    try resolver.put(a, "widget.html", "<div><x-slot name=\"icon\" /> <x-slot name=\"label\" /></div>");
+
+    const result = try render(
+        a,
+        "<x-include template=\"widget.html\"><x-define name=\"icon\">*</x-define><x-define name=\"label\">Save</x-define></x-include>",
+        &ctx,
+        &resolver,
+    );
+    defer a.free(result);
+    try testing.expectEqualStrings("<div>* Save</div>", result);
+}
+
+test "include_named_slot_default_used" {
+    const a = testing.allocator;
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    try resolver.put(a, "card.html", "<div><h2><x-slot name=\"title\">Default Title</x-slot></h2><x-slot /></div>");
+
+    const result = try render(
+        a,
+        "<x-include template=\"card.html\"><p>Just body</p></x-include>",
+        &ctx,
+        &resolver,
+    );
+    defer a.free(result);
+    try testing.expectEqualStrings("<div><h2>Default Title</h2><p>Just body</p></div>", result);
+}
+
+test "include_named_slot_default_overridden" {
+    const a = testing.allocator;
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    try resolver.put(a, "card.html", "<div><h2><x-slot name=\"title\">Default Title</x-slot></h2><x-slot /></div>");
+
+    const result = try render(
+        a,
+        "<x-include template=\"card.html\"><x-define name=\"title\">Custom Title</x-define><p>Body</p></x-include>",
+        &ctx,
+        &resolver,
+    );
+    defer a.free(result);
+    try testing.expectEqualStrings("<div><h2>Custom Title</h2><p>Body</p></div>", result);
+}
+
+test "include_named_slots_with_attrs" {
+    const a = testing.allocator;
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    try resolver.put(a, "card.html",
+        \\<div class="card" x-attr:data-variant="variant">
+        \\  <h2><x-slot name="title" /></h2>
+        \\  <x-slot />
+        \\</div>
+    );
+
+    const result = try render(
+        a,
+        "<x-include template=\"card.html\" variant=\"featured\"><x-define name=\"title\">Featured</x-define><p>Content</p></x-include>",
+        &ctx,
+        &resolver,
+    );
+    defer a.free(result);
+
+    try testing.expect(std.mem.indexOf(u8, result, "data-variant=\"featured\"") != null);
+    try testing.expect(std.mem.indexOf(u8, result, "Featured") != null);
+    try testing.expect(std.mem.indexOf(u8, result, "<p>Content</p>") != null);
+}
+
+test "include_duplicate_define_is_error" {
+    const a = testing.allocator;
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    try resolver.put(a, "card.html", "<div><x-slot name=\"title\" /></div>");
+
+    const result = render(
+        a,
+        "<x-include template=\"card.html\"><x-define name=\"title\">First</x-define><x-define name=\"title\">Second</x-define></x-include>",
+        &ctx,
+        &resolver,
+    );
+    try testing.expectError(error.DuplicateSlotDefinition, result);
+}
+
+// ---------------------------------------------------------------------------
+// ErrorDetail tests
+// ---------------------------------------------------------------------------
+
+test "error_detail_undefined_variable" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var detail: ErrorDetail = .{};
+    var ctx: Context = .{ .err_detail = &detail };
+    defer ctx.deinit(a);
+
+    const result = render(a, "<p><x-var name=\"missing\" /></p>", &ctx, &resolver);
+    try testing.expectError(error.UndefinedVariable, result);
+    try testing.expectEqual(@as(usize, 1), detail.line);
+    try testing.expectEqualStrings("missing", detail.message);
+}
+
+test "error_detail_malformed_element" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var detail: ErrorDetail = .{};
+    var ctx: Context = .{ .err_detail = &detail };
+    defer ctx.deinit(a);
+
+    const result = render(a, "<p><x-var /></p>", &ctx, &resolver);
+    try testing.expectError(error.MalformedElement, result);
+    try testing.expectEqual(@as(usize, 1), detail.line);
+    try testing.expect(detail.message.len > 0);
+}
+
+test "error_detail_line_after_newlines" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var detail: ErrorDetail = .{};
+    var ctx: Context = .{ .err_detail = &detail };
+    defer ctx.deinit(a);
+
+    const result = render(a, "<p>one</p>\n<p>two</p>\n<p><x-var name=\"gone\" /></p>", &ctx, &resolver);
+    try testing.expectError(error.UndefinedVariable, result);
+    try testing.expectEqual(@as(usize, 3), detail.line);
+}
+
+test "error_detail_column" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var detail: ErrorDetail = .{};
+    var ctx: Context = .{ .err_detail = &detail };
+    defer ctx.deinit(a);
+
+    const result = render(a, "abc<x-var name=\"x\" />", &ctx, &resolver);
+    try testing.expectError(error.UndefinedVariable, result);
+    try testing.expectEqual(@as(usize, 1), detail.line);
+    try testing.expectEqual(@as(usize, 4), detail.column);
+}
+
+test "error_detail_message_includes_name" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var detail: ErrorDetail = .{};
+    var ctx: Context = .{ .err_detail = &detail };
+    defer ctx.deinit(a);
+
+    const result = render(a, "<x-var name=\"page.author\" />", &ctx, &resolver);
+    try testing.expectError(error.UndefinedVariable, result);
+    try testing.expectEqualStrings("page.author", detail.message);
+}
+
+test "error_detail_null_still_returns_error" {
+    const a = testing.allocator;
+    var resolver: Resolver = .{};
+    defer resolver.deinit(a);
+    var ctx: Context = .{};
+    defer ctx.deinit(a);
+
+    const result = render(a, "<x-var name=\"missing\" />", &ctx, &resolver);
+    try testing.expectError(error.UndefinedVariable, result);
 }
