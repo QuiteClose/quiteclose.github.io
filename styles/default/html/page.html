@@ -5,6 +5,15 @@
 <script src="/js/theme-switcher.js" defer></script>
 </x-define>
 <x-define slot="body">
-<h1><x-var name="page.title" /></h1>
-<x-slot />
+<x-include template="site-header.html" />
+<main id="main-content" class="region">
+  <div class="wrapper">
+    <div class="flow prose">
+      <h1><x-var name="page.title" /></h1>
+      <x-slot />
+    </div>
+  </div>
+</main>
+<x-include template="theme-switcher.html" />
+<x-include template="site-footer.html" />
 </x-define>

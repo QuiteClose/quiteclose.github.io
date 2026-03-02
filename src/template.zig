@@ -349,7 +349,8 @@ fn renderSlot(a: Allocator, input: []const u8, start: usize, ctx: *Context, reso
     };
     const is_self_closing = tag_end > 0 and rest[tag_end - 1] == '/';
 
-    const indent = detectIndent(out.items);
+    const indent = try a.dupe(u8, detectIndent(out.items));
+    defer a.free(indent);
 
     if (is_self_closing) {
         const tag = rest[0 .. tag_end + 1];
@@ -546,7 +547,8 @@ fn renderInclude(a: Allocator, input: []const u8, start: usize, ctx: *Context, r
         .err_detail = ctx.err_detail,
     };
 
-    const indent = detectIndent(out.items);
+    const indent = try a.dupe(u8, detectIndent(out.items));
+    defer a.free(indent);
     const rendered = try renderContent(a, tmpl_content, &child_ctx, resolver, depth + 1);
     defer a.free(rendered);
     try appendIndented(a, out, rendered, indent);

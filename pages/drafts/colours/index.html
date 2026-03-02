@@ -1,0 +1,27 @@
+---
+title: "Your Terminal will love these Colour Schemes"
+author: QuiteClose
+layout: page.html
+draft: true
+---
+<p>There's something of value in
+<a href="https://github.com/altercation/solarized">Solarized</a>
+that I want to unpack. For now, though, please enjoy this humble palette demo:</p>
+
+<x-comment>Palette widget placeholder: the interactive colour scheme picker
+will be built as a proper Wig component in a future phase.</x-comment>
+
+<p>Here's a Python code sample to see how the syntax highlighting works with
+different colour schemes:</p>
+
+<x-include template="code-block.html" mode="live" language="python" id="codeEditor01">#Checking if a file exists in two ways
+#1- Using the OS module
+import os 
+exists = os.path.isfile('/path/to/file')
+num = 3445567
+print(f'{num:,}'*3)
+#2- Use the pathlib module for a better performance
+from pathlib import Path
+config = Path('/path/to/file') 
+if config.is_file(): 
+    pass</x-include>
