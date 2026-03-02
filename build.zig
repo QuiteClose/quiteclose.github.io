@@ -21,6 +21,17 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run template engine tests");
     test_step.dependOn(&b.addRunArtifact(template_tests).step);
 
+    const djot_tests = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/djot.zig"),
+            .target = b.graph.host,
+        }),
+    });
+    const run_djot = b.addRunArtifact(djot_tests);
+    run_djot.setCwd(b.path("."));
+    const djot_test_step = b.step("test-djot", "Run djot parser tests");
+    djot_test_step.dependOn(&run_djot.step);
+
     // zig build -- release build (no pattern library, no drafts)
     const release_site = addGenerateStep(b, gen, false);
     const install = b.getInstallStep();
