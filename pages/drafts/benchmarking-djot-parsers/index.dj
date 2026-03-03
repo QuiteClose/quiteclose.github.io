@@ -1,0 +1,329 @@
+---
+title: "Benchmarking Five Djot Parsers"
+author: QuiteClose
+layout: page.html
+draft: true
+---
+
+# Benchmarking Five Djot Parsers
+
+I recently wrote a [Djot][] parser in Zig. Naturally, I wanted to know how fast
+it is --- and whether it actually produces the right output. So I rounded up
+every Djot implementation I could find and ran them all against the same
+half-megabyte document.
+
+[Djot]: https://djot.net
+
+Here's what I learned.
+
+## What is Djot?
+
+If you haven't come across it yet, [Djot][] is a light markup language by John
+MacFarlane (the creator of pandoc and CommonMark). It inherits Markdown's
+readability but replaces Markdown's ambiguous grammar with a well-defined
+syntax --- easier to parse, harder to get wrong. Think of it as Markdown with
+the rough edges filed off.
+
+## The contenders
+
+Five implementations, five languages, three very different approaches to the
+same problem.
+
+### djot.js (TypeScript / Node.js)
+
+MacFarlane's [reference implementation][djot.js] --- the canonical one. A
+TypeScript rewrite of the original Lua version, and the engine behind the
+[djot playground][playground]. Two-phase architecture: a block parser emits an
+event stream, then an inline parser processes each block to build a full AST.
+It also supports filters, AST manipulation, and pandoc JSON conversion. If
+you want to know what correct Djot output looks like, this is the source of
+truth.
+
+[djot.js]: https://github.com/jgm/djot.js
+[playground]: https://djot.net/playground
+
+### djot.lua (Lua)
+
+MacFarlane's [original implementation][djot.lua]. Same two-phase architecture
+as djot.js, but written in Lua. The oldest and most battle-tested of the
+group; installed via luarocks.
+
+[djot.lua]: https://github.com/jgm/djot.lua
+
+### jotdown (Rust)
+
+[jotdown][] takes a different approach entirely. Inspired by
+[pulldown-cmark][], it's a pull parser: instead of building an AST, it exposes
+an iterator of events (start tags, end tags, text). Consumers render directly
+from the event stream or build their own data structures. Zero dependencies,
+LTO-optimised release builds. The fastest possible architecture when all you
+need is serialised output.
+
+[jotdown]: https://github.com/hellux/jotdown
+[pulldown-cmark]: https://github.com/raphlinus/pulldown-cmark
+
+### pandoc (Haskell)
+
+[pandoc][] is the universal document converter. It reads Djot (among dozens of
+formats) into its own internal document model --- a rich, typed AST that
+represents the union of features across *all* supported formats. It's not a
+specialised Djot tool; the Djot reader is one small component of a much larger
+system. Its runtime reflects the cost of that generality.
+
+[pandoc]: https://pandoc.org
+
+### zjot (Zig)
+
+[zjot][] is the one I wrote. Single-phase recursive descent, zero external
+dependencies, arena-allocated. It builds a complete AST in one pass: block
+parsing and inline parsing happen together as the document is consumed.
+
+[zjot]: https://github.com/niceguydave/zjot
+
+Why build the AST at all? Because zjot is designed as a library for [Wig][],
+a custom static site generator. Wig needs to walk, inspect, and transform the
+document tree before rendering --- you can't do that with a stream of events.
+A pull-parser interface like jotdown's would force the consumer to reconstruct
+the tree anyway, so zjot builds it directly.
+
+[Wig]: https://quiteclose.github.io
+
+## Why bother comparing?
+
+Partly curiosity, partly verification.
+
+The five implementations span five languages (Zig, Rust, TypeScript, Lua,
+Haskell), three execution models (native, JIT, interpreted), and three
+architectural approaches (single-phase AST, two-phase event-to-AST, pull
+parser). That's an interesting spread.
+
+The more practical question is whether zjot's AST has a measurable cost.
+jotdown avoids allocating an AST entirely --- it streams events straight to the
+HTML renderer. zjot allocates a full tree of nodes in memory before rendering
+anything. How much does that extra work actually cost?
+
+And then there's correctness. Passing 261 unit tests is good, but it's better
+to verify that the output matches the canonical implementation at scale, on a
+real document with all the edge cases that come with 13,000 lines of prose.
+
+## Methodology
+
+### Input
+
+The benchmark input is the English edition of *Pro Git* (1st edition) by Scott
+Chacon, concatenated from its chapter source files and converted from Markdown
+to Djot using pandoc:
+
+```
+$ find progit-master/en -name '*.markdown' | sort | xargs cat > progit-en.md
+$ pandoc -f markdown -t djot progit-en.md -o bench.dj
+```
+
+The resulting file is 505 KB and 13,530 lines of Djot --- headings, paragraphs,
+emphasis, links, code blocks, lists, images. A realistic mix.
+
+### Tool
+
+All benchmarks use [hyperfine][], which handles warmup runs, statistical
+analysis, and outlier detection. The Pro Git benchmark uses 5 warmup runs and
+100 measured runs; the startup benchmark uses 5 warmup runs and 200 measured
+runs.
+
+[hyperfine]: https://github.com/sharkdp/hyperfine
+
+### Startup isolation
+
+Process startup overhead varies wildly across runtimes. A Zig or Rust binary
+starts in about 3 ms. Node.js takes ~40 ms just to load V8 and parse the
+bundled JavaScript. Lua takes ~43 ms to load the djot module. pandoc, a large
+Haskell binary, takes ~32 ms.
+
+To separate actual parse time from startup cost, a second benchmark parses the
+trivial input `Hello, *World*!`. Subtracting this from the full benchmark gives
+an estimate of pure parse-and-render time.
+
+## Results
+
+### Wall-clock time (Pro Git, 505 KB --- 100 runs)
+
+| Parser           | Mean (ms) | Min (ms) | Max (ms) | Relative |
+|:-----------------|----------:|---------:|---------:|---------:|
+| jotdown (Rust)   |       6.6 |      5.6 |     15.2 |     1.00 |
+| zjot (Zig)       |       7.7 |      6.5 |     17.5 |     1.16 |
+| djot.js (Node)   |      69.1 |     67.4 |     77.0 |    10.47 |
+| djot.lua (Lua)   |     153.8 |    150.9 |    160.5 |    23.27 |
+| pandoc (Haskell) |     492.8 |    481.1 |    541.2 |    74.59 |
+
+### Startup time (trivial input --- 200 runs)
+
+| Parser           | Mean (ms) | Min (ms) | Max (ms) | Relative |
+|:-----------------|----------:|---------:|---------:|---------:|
+| zjot (Zig)       |       3.1 |      2.4 |     13.8 |     1.00 |
+| jotdown (Rust)   |       3.8 |      2.8 |      5.3 |     1.20 |
+| pandoc (Haskell) |      31.9 |     29.0 |     43.2 |    10.17 |
+| djot.js (Node)   |      40.0 |     34.5 |     96.4 |    12.72 |
+| djot.lua (Lua)   |      42.6 |     39.4 |     62.7 |    13.56 |
+
+### Normalised parse time (Pro Git minus startup)
+
+| Parser           | Total (ms) | Startup (ms) | Parse (ms) | Relative |
+|:-----------------|----------:|-------------:|-----------:|---------:|
+| jotdown (Rust)   |        6.6 |          3.8 |        2.8 |    1.00x |
+| zjot (Zig)       |        7.7 |          3.1 |        4.5 |    1.60x |
+| djot.js (Node)   |       69.1 |         40.0 |       29.2 |   10.30x |
+| djot.lua (Lua)   |      153.8 |         42.6 |      111.2 |   39.27x |
+| pandoc (Haskell) |      492.8 |         31.9 |      460.9 |  162.79x |
+
+## Discussion
+
+### The native tier
+
+jotdown parses the benchmark in 2.8 ms; zjot takes 4.5 ms. That's about 1.6x
+slower, or 1.7 ms in absolute terms. Both finish in under 8 ms wall-clock.
+
+The gap is entirely explained by the work zjot does that jotdown doesn't.
+jotdown streams events straight to its HTML renderer without building anything
+in between. zjot allocates a complete tree --- every node, every child array,
+every attribute --- and then walks it a second time to render HTML. That
+extra allocation and traversal costs 60% more parse time, but in absolute
+terms it's under 2 ms on a half-megabyte document. Not nothing, but not a
+lot either.
+
+For a library whose consumers need to inspect or transform the document tree
+(which is exactly what Wig does), building the AST is the primary output ---
+not an overhead. zjot pays a small cost for a large capability gain.
+
+### The interpreted tier
+
+djot.js is about 10x slower in both wall-clock and normalised parse time. More
+than half the wall-clock time (40 ms of 69 ms) is V8 startup. The actual
+parsing takes 29 ms. For a build tool invoked once per document, 69 ms is
+perfectly fine. For a pipeline processing hundreds of files, the per-file cost
+starts to add up.
+
+djot.lua's normalised parse time (111 ms) is 39x slower than jotdown. Lua 5.4
+is a straightforward tree-walking interpreter without a JIT, so that's about
+what you'd expect. It does meaningful work, though: full AST, filter support,
+both streaming and tree-based APIs.
+
+### pandoc
+
+pandoc is 163x slower in normalised parse time. This isn't really a fair fight.
+pandoc's Djot reader translates into a universal document model that represents
+the union of features across dozens of input and output formats. It's doing
+far more work per document than any specialised parser. pandoc's value is in
+its generality, not its speed on a single format.
+
+### Output conformance
+
+Speed is only interesting if everyone agrees on the answer. Using djot.js as
+the canonical reference:
+
+| Parser           | Output size | Matches djot.js? |
+|:-----------------|------------:|:-----------------|
+| djot.js (Node)   |     554,113 | (reference)      |
+| zjot (Zig)       |     554,113 | byte-identical   |
+| jotdown (Rust)   |     554,113 | byte-identical   |
+| djot.lua (Lua)   |     561,486 | entity encoding  |
+| pandoc (Haskell) |     552,528 | structural       |
+
+**zjot and jotdown produce byte-identical output** to djot.js across all
+13,530 lines. Not just "similar" --- identical down to the last byte. That's a
+stronger verification of correctness than any test suite can provide on its
+own.
+
+**djot.lua** differs only in how it encodes smart punctuation. Where djot.js
+emits UTF-8 characters directly (`'`, `—`, `–`), djot.lua uses HTML entities
+(`&rsquo;`, `&mdash;`, `&ndash;`). All 1,492 differing lines are explained by
+this encoding choice. The parsed content is semantically identical.
+
+**pandoc** has three categories of rendering difference, none of which are
+parsing disagreements:
+
+- *Section wrapping*: djot.js wraps headings in `<section id="...">` elements;
+  pandoc puts the `id` on the heading itself
+- *Line wrapping*: pandoc rewraps prose to a narrower width
+- *List item whitespace*: pandoc omits the spaces around `<li>` content
+
+These are all HTML serialisation conventions --- pandoc's Djot reader produces
+pandoc's own document model, and its HTML writer has its own formatting rules.
+
+## Reproducing the benchmark
+
+If you'd like to run this yourself, here's everything you need.
+
+### Prerequisites
+
+- [Zig 0.15+](https://ziglang.org/download/) (for zjot)
+- [Rust / cargo](https://rustup.rs) (for jotdown)
+- [Node.js](https://nodejs.org) (for djot.js)
+- [Lua 5.4 + luarocks](https://luarocks.org) (for djot.lua)
+- [pandoc](https://pandoc.org/installing.html) (for conversion and as a benchmark candidate)
+- [hyperfine](https://github.com/sharkdp/hyperfine) (for benchmarking)
+
+### Clone and build
+
+``` sh
+# Create a working directory
+mkdir djot-bench && cd djot-bench
+
+# zjot
+git clone https://github.com/niceguydave/zjot
+cd zjot && zig build -Doptimize=ReleaseFast && cd ..
+
+# jotdown
+git clone https://github.com/hellux/jotdown
+cd jotdown
+CARGO_TARGET_DIR=target cargo build --release --features cli
+cd ..
+
+# djot.js
+git clone https://github.com/jgm/djot.js
+cd djot.js && npm ci && npm run build && cd ..
+
+# djot.lua
+luarocks install djot
+```
+
+### Prepare the benchmark input
+
+Download the Pro Git first edition source, concatenate the English chapters,
+and convert to Djot:
+
+``` sh
+curl -L -o progit.tar.gz \
+  https://github.com/progit/progit/archive/refs/heads/master.tar.gz
+tar xzf progit.tar.gz
+find progit-master/en -name '*.markdown' | sort | xargs cat > progit-en.md
+pandoc -f markdown -t djot progit-en.md -o zjot/bench/bench.dj
+```
+
+### Run
+
+``` sh
+cd zjot
+bash bench/run.sh
+```
+
+The script runs both benchmarks (Pro Git and startup) and prints the raw
+results, startup times, and a normalised table. Results are also exported to
+`bench/results.md`, `bench/startup.md`, and their JSON counterparts.
+
+### Adjust paths
+
+The benchmark script expects this directory layout relative to the zjot repo:
+
+```
+djot-bench/
+  zjot/           # this repo (with zig-out/bin/zjot built)
+  djot.js/        # djot.js (with lib/ built)
+  jotdown/        # jotdown (with target/release/jotdown built)
+```
+
+If your layout differs, edit the paths at the top of `bench/run.sh`.
+
+## Hardware
+
+These benchmarks were run on an Apple Silicon Mac. Your numbers will differ,
+but the relative ordering should be consistent. For the most meaningful
+comparison, run the benchmark yourself on a quiet system.
